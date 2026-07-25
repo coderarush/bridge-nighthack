@@ -1,7 +1,6 @@
 /**
- * Data layer. Every read falls back to the seed aggregate when Supabase env is
- * absent or a row is missing, so the deployed URL always renders something
- * (skeleton before go-live, real data after). Server-only.
+ * Server-only aggregate reads. The seed is available only when Supabase is not
+ * configured; configured environments fail closed on missing rows or errors.
  */
 import { createServiceClient } from "./supabase";
 import { seedRoom } from "../seed/room";
