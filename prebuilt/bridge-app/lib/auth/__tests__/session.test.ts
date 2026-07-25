@@ -3,6 +3,7 @@ import { test } from "node:test";
 import {
   AuthError,
   requireParticipant,
+  requireRunParticipant,
   requireSupabaseUser,
   type AuthDependencies,
 } from "../session";
@@ -26,6 +27,7 @@ function dependencies(
       name: "Atlas Store",
       role: "customer",
     }),
+    hasRunMembership: async () => true,
     ...overrides,
   };
 }
@@ -109,4 +111,43 @@ test("enforces persisted participant roles", async () => {
   );
   assert.equal(participant.role, "customer");
   assert.equal(participant.name, "Atlas Store");
+});
+
+test("rejects a participant who is not assigned to the requested run", async () => {
+  await expectAuthError(
+    () =>
+      requireRunParticipant(
+        request("Bearer verified-token"),
+        "22222222-2222-4222-8222-222222222222",
+        ["customer"],
+        dependencies({ hasRunMembership: async () => false }),
+      ),
+    403,
+    "run_forbidden",
+  );
+});
+
+test("allows a run member and gives operators an intentional global bypass", async () => {
+  const member = await requireRunParticipant(
+    request("Bearer verified-token"),
+    "22222222-2222-4222-8222-222222222222",
+    ["customer"],
+    dependencies(),
+  );
+  assert.equal(member.role, "customer");
+
+  const operator = await requireRunParticipant(
+    request("Bearer verified-token"),
+    "33333333-3333-4333-8333-333333333333",
+    ["operator"],
+    dependencies({
+      getParticipant: async () => ({
+        userId: "11111111-1111-4111-8111-111111111111",
+        name: "Bridge Operator",
+        role: "operator",
+      }),
+      hasRunMembership: async () => false,
+    }),
+  );
+  assert.equal(operator.role, "operator");
 });

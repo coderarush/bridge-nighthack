@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { authErrorResponse, requireParticipant } from "@/lib/auth/session";
+import { authErrorResponse, requireRunParticipant } from "@/lib/auth/session";
 import { getRoom } from "@/lib/db/queries";
 
 export const dynamic = "force-dynamic";
@@ -7,8 +7,9 @@ export const dynamic = "force-dynamic";
 type RouteContext = { params: Promise<{ runId: string }> };
 
 export async function GET(request: NextRequest, context: RouteContext) {
+  const { runId } = await context.params;
   try {
-    await requireParticipant(request);
+    await requireRunParticipant(request, runId);
   } catch (error) {
     return (
       authErrorResponse(error) ??
@@ -19,7 +20,6 @@ export async function GET(request: NextRequest, context: RouteContext) {
     );
   }
 
-  const { runId } = await context.params;
   try {
     const room = await getRoom(runId);
     if (!room) {

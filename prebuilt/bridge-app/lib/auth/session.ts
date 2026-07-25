@@ -20,6 +20,11 @@ export interface AuthDependencies {
     userId: string,
     token: string,
   ): Promise<ParticipantSession | null>;
+  hasRunMembership(
+    userId: string,
+    runId: string,
+    token: string,
+  ): Promise<boolean>;
 }
 
 export class AuthError extends Error {
@@ -29,7 +34,8 @@ export class AuthError extends Error {
       | "missing_authorization"
       | "invalid_token"
       | "participant_not_bootstrapped"
-      | "role_forbidden",
+      | "role_forbidden"
+      | "run_forbidden",
   ) {
     super(code);
     this.name = "AuthError";
@@ -69,6 +75,17 @@ const liveDependencies: AuthDependencies = {
       name: data.display_name,
       role: data.role as ParticipantRole,
     };
+  },
+
+  async hasRunMembership(userId, runId, token) {
+    const client = createAuthenticatedServerClient(token);
+    const { data, error } = await client
+      .from("run_participants")
+      .select("run_id")
+      .eq("run_id", runId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    return !error && Boolean(data);
   },
 };
 
@@ -110,6 +127,35 @@ export function requireOperator(request: Request | NextRequest) {
 
 export function requireProvider(request: Request | NextRequest) {
   return requireParticipant(request, ["provider"]);
+}
+
+export async function requireRunParticipant(
+  request: Request | NextRequest,
+  runId: string,
+  allowedRoles: readonly ParticipantRole[] = [
+    "provider",
+    "customer",
+    "operator",
+  ],
+  dependencies: AuthDependencies = liveDependencies,
+): Promise<ParticipantSession> {
+  const participant = await requireParticipant(
+    request,
+    allowedRoles,
+    dependencies,
+  );
+  if (participant.role === "operator") return participant;
+
+  const token = bearerToken(request);
+  const isMember = await dependencies.hasRunMembership(
+    participant.userId,
+    runId,
+    token,
+  );
+  if (!isMember) {
+    throw new AuthError(403, "run_forbidden");
+  }
+  return participant;
 }
 
 export function authErrorResponse(error: unknown): Response | null {

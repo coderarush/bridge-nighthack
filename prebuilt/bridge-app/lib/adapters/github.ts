@@ -18,6 +18,7 @@ import type {
 import { requireDemoRepositoryConfig } from "../orchestrator/run-guards";
 import { evaluateRequiredCheckRuns } from "./github-checks";
 import { waitForExpectedPullRequestHead } from "./github-pr-head";
+import { planGitCommit } from "./github-commit";
 
 function octokit(): Octokit {
   const token = process.env.GITHUB_TOKEN;
@@ -117,12 +118,21 @@ export const githubRepositoryClient: RepositoryClient = {
       tree,
     });
 
+    const plan = planGitCommit({
+      currentCommitSha: baseSha,
+      currentTreeSha: baseCommit.data.tree.sha,
+      candidateTreeSha: newTree.data.sha,
+    });
+    if (plan.kind === "reuse") {
+      return { commitSha: plan.commitSha };
+    }
+
     const commit = await gh.git.createCommit({
       owner: ref.owner,
       repo: ref.repo,
       message,
-      tree: newTree.data.sha,
-      parents: [baseSha],
+      tree: plan.treeSha,
+      parents: [plan.parentSha],
     });
 
     await gh.git.updateRef({
@@ -148,6 +158,7 @@ export const githubRepositoryClient: RepositoryClient = {
       owner: ref.owner,
       repo: ref.repo,
       head: `${ref.owner}:${branchName}`,
+      base: ref.baseBranch,
       state: "open",
     });
     let pr = existing.data[0];

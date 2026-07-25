@@ -9,3 +9,4 @@ next-env.d.ts
 tsconfig.tsbuildinfo
 .vercel
 supabase/.temp/
+.env*

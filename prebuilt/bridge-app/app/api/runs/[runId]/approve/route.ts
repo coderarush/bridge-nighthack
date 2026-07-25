@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import {
   authErrorResponse,
-  requireProvider,
+  requireRunParticipant,
 } from "@/lib/auth/session";
 import { createServiceClient } from "@/lib/db/supabase";
 import { addEvent } from "@/lib/db/queries";
@@ -12,9 +12,10 @@ export async function POST(
   req: NextRequest,
   context: { params: Promise<{ runId: string }> },
 ) {
+  const { runId } = await context.params;
   let participant;
   try {
-    participant = await requireProvider(req);
+    participant = await requireRunParticipant(req, runId, ["provider"]);
   } catch (error) {
     return (
       authErrorResponse(error) ??
@@ -25,7 +26,6 @@ export async function POST(
     );
   }
 
-  const { runId } = await context.params;
   const payload = await req.json().catch(() => ({}));
   const decision = payload.decision === "rejected" ? "rejected" : "approved";
   const note = typeof payload.note === "string" ? payload.note.trim().slice(0, 500) : "";
