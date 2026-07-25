@@ -1035,13 +1035,15 @@ from anon, authenticated, service_role;
 grant select on table
   public.workspaces,
   public.workspace_memberships,
+  public.secret_references,
   public.github_app_installations,
   public.provider_connections,
   public.repositories,
   public.migration_recipes,
   public.webhook_deliveries,
   public.orchestration_jobs,
-  public.orchestration_attempts
+  public.orchestration_attempts,
+  public.workspace_audit_logs
 to authenticated;
 
 grant select on table
