@@ -127,6 +127,9 @@ This is a draft PR and requires human review before merge.
 
 ## Reset strategy
 
+This strategy is only for a separately provisioned disposable run. Do not close,
+delete, clear, or reset the preserved final room, branch, PR, or evidence chain.
+
 Maintain a pristine `demo-base` branch. The reset script or manual run should:
 
 1. close or ignore the previous demo PR,

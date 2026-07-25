@@ -1,5 +1,8 @@
 # Bridge NightHack MVP PRD
 
+> This is the original scoped MVP contract. The preserved evidence run must not
+> be reset; use `09_DEMO_SCRIPT_AND_RUNBOOK.md` for current operation.
+
 ## Goal
 
 Demonstrate that Bridge can transform one external API breaking change into a safe, verified, collaborative migration for one GitHub repository.
@@ -49,7 +52,10 @@ Given the two AtlasPay OpenAPI specs, Bridge records:
 
 ### FR-2 Impact discovery
 
-Bridge searches selected TypeScript files and returns every syntactic object key named `payment_method` within the target integration scope. Each match stores file path, line number, snippet, and confidence.
+Bridge searches the explicit recipe scope for `payment_method` object keys that
+also satisfy the controlled AtlasPay request-shape guard. Each match stores file
+path, line number, snippet, and confidence. The preserved run used four explicit
+paths; later source adds bounded recursive TypeScript discovery.
 
 ### FR-3 Patch generation
 
@@ -69,7 +75,8 @@ At least two browser clients can join the same room, see presence, post comments
 
 ### FR-7 Approval
 
-An authenticated or demo-role participant can approve the migration plan. Approval is recorded with participant, timestamp, and current plan version.
+An authenticated provider-role participant can approve the migration plan.
+Approval is recorded with participant, timestamp, and current plan version.
 
 ### FR-8 Auditability
 
@@ -107,7 +114,8 @@ The MVP is accepted only when:
 - The app links to a real passing GitHub run/check.
 - Two sessions show live presence.
 - A comment and approval replicate live.
-- A full rehearsal succeeds twice from reset.
+- Two rehearsals succeed from the preserved read-only evidence or a separately
+  provisioned disposable run. Never reset the preserved run.
 
 ## Explicit non-goals
 

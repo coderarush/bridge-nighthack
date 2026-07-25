@@ -1,5 +1,10 @@
 # Data Model and API Contracts
 
+> This is the original demo graph. Migrations `0006` through `0010` add the
+> workspace-owned production foundation described in
+> `18_PRODUCTION_ARCHITECTURE_AND_JUDGE_QA.md`; the preserved demo run itself has
+> not yet been retrofitted into that tenant graph.
+
 ## Core tables
 
 ### providers

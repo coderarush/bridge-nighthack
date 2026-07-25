@@ -1,5 +1,9 @@
 # Bridge — Friday Game Plan (step by step)
 
+> Archival pre-event plan. Do not execute its deploy, reset, or credential steps.
+> Use `SUBMISSION.md`, `09_DEMO_SCRIPT_AND_RUNBOOK.md`, and
+> `17_FINAL_SUBMISSION_CHECKLIST.md` for the current release.
+
 **What's different now:** the whole migration engine is pre-built and the app is
 built + deploys. Supabase is live and seeded. So Friday is not "build the plumbing" —
 it's *deploy, prove one real migration early, then spend the window making it
@@ -58,7 +62,8 @@ instantly in both. **Doors lock 11:00 PM — don't leave.**
 **✅ Gate:** a first-time viewer understands the product in 30 seconds.
 
 ## 10:15–10:50 — Second live run + backups (A)
-- Reset (new run) and run the whole flow again live to confirm repeatability.
+- Historical instruction: use a separate disposable run to confirm repeatability.
+  Never reset the preserved evidence run.
 - Leave the real PR + green CI tab open as a backup; record a 60-second screen capture.
 
 **✅ Gate:** two independent live runs succeeded; backup captured.
@@ -85,7 +90,8 @@ AI explanation → animations → extra polish → realtime (fall back to the 5s
 already there → or two refreshed windows).
 
 **Never cut:** the public URL, the correct 3 impacted files, the real draft PR, the
-real green CI on the exact SHA, coherent room state, reset.
+real green CI on the exact SHA, coherent room state, and preservation of the
+verified evidence.
 
 # Absolute-minimum demo if the live path breaks
 Change → 3 impacts (live) → `npm run patch:preview` shows the 3-edit patch → open the

@@ -1,5 +1,9 @@
 # Technical Architecture
 
+> This document records the controlled demo architecture. The later workspace,
+> GitHub App, and durable-job boundaries are documented in
+> `18_PRODUCTION_ARCHITECTURE_AND_JUDGE_QA.md`.
+
 ## Architecture principle
 
 **Deterministic first, agent second.** The critical migration path must be inspectable and reproducible. An LLM may summarize the change or explain evidence, but it must not be the only mechanism responsible for the patch.
@@ -9,7 +13,12 @@
 - **Frontend/server:** Next.js with TypeScript.
 - **Deployment:** Vercel or another production platform already understood by the team.
 - **Database/auth/realtime:** Supabase Postgres, Auth or demo identities, and Realtime Presence/Broadcast.
-- **Source control integration:** a backend-only **fine-grained Personal Access Token** scoped to the single demo repo (Contents R/W, Pull requests R/W, Actions Read, Checks Read). This replaces a GitHub App for NightHack — same demo, ~45 min less setup, one fewer failure surface. A GitHub App is a post-hackathon upgrade.
+- **Source control integration:** the preserved demo uses a backend-only
+  **fine-grained Personal Access Token** scoped to the single fixture repo
+  (Contents R/W, Pull requests R/W, Actions Read, Checks Read). The later
+  application release adds a registered least-privilege GitHub App and a live
+  pre-install handshake, but external callback and installation-token execution
+  are not yet verified end to end.
 - **Change detector:** `oasdiff`, `openapi-diff`, or a controlled parser for the single AtlasPay change.
 - **Impact scanner:** TypeScript AST where fast; otherwise a constrained structural search with exact key validation.
 - **Patch engine:** deterministic AST transform or narrowly guarded text transform.
@@ -38,7 +47,9 @@ A server-side stage runner that:
 5. transitions state,
 6. broadcasts the update.
 
-Do not build a complex queue. A database-backed stage lock plus idempotent routes is enough for the demo.
+The preserved demo uses a database-backed stage lock plus idempotent routes. The
+later release also implements fenced durable-job storage/coordinator primitives;
+no deployed worker uses them yet.
 
 ### Provider change adapter
 
@@ -106,8 +117,10 @@ Use a **fine-grained PAT** limited to the single demo repository, least privileg
 - Actions: read (poll workflow runs).
 - Checks: read (poll check runs for the exact SHA).
 
-No webhooks, so no event subscriptions to configure. The token lives only in
-server-side env and is never sent to the browser. Rotate it after the event.
+The preserved demo uses polling and no webhook. The token lives only in
+server-side env and is never sent to the browser. Archive the evidence before
+rotating it. The registered GitHub App must not be presented as lifecycle-ready
+until its webhook route is deployed and verified.
 
 ## Request flow
 

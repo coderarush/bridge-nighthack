@@ -47,7 +47,7 @@ Alternative one-liners:
 
 The demo must prove four claims:
 
-1. **Detection:** Bridge understands a real provider contract change.
+1. **Detection:** Bridge understands a controlled machine-readable provider contract change.
 2. **Relevance:** Bridge maps that change to exact customer code paths.
 3. **Execution:** Bridge makes a safe patch and validates it with real CI.
 4. **Coordination:** Bridge gives provider and customer a shared, auditable room for the migration.

@@ -1,5 +1,8 @@
 # Pitch and Judge Q&A
 
+> Current judge-facing answers must stay within the evidence in `SUBMISSION.md`,
+> `DISCLOSURE.md`, and `18_PRODUCTION_ARCHITECTURE_AND_JUDGE_QA.md`.
+
 ## 20-second pitch
 
 > Bridge turns breaking external API changes into tested draft pull requests. It detects the provider change, finds the exact customer code that will break, generates a bounded migration, validates the commit in CI, and gives the provider and customer one shared room to review it.
@@ -54,6 +57,14 @@ Avoid token-based pricing as the primary model; buyers pay for protected integra
 
 ## Judge questions
 
+### “What is AtlasPay?”
+
+AtlasPay is a fictional provider fixture created for a controlled proof. Its v2
+OpenAPI contract removes `payment_method` and requires `payment_method_id` for
+`POST /payments`. AtlasStore is the public customer fixture with three intended
+call sites and three deliberate look-alikes. Neither is an outside customer or
+provider.
+
 ### “Is this just a code agent with a trigger?”
 
 No. A code agent starts after a human frames a task. Bridge owns the upstream and downstream system: provider change detection, repo-specific impact mapping, migration policy, deterministic recipes, validation tied to the exact commit, PR evidence, and cross-company coordination.
@@ -84,4 +95,9 @@ Low-confidence patches. The company fails if it broadens faster than it can prov
 
 ### “What would you build next?”
 
-Real GitHub App onboarding, one real provider design partner, repository monitors, policy controls, and a recipe engine that combines OpenAPI diffs, structural search, deterministic transforms, and model-assisted residue.
+Complete and verify the registered GitHub App's external consent/callback,
+repository registration, lifecycle reconciliation, and installation-token
+execution; wire the fenced durable-job coordinator to a deployed worker; retrofit
+the demo run graph into workspace ownership; then validate one recipe with a real
+provider design partner. The pre-install handshake and workspace creation path are
+live, but those remaining operations are not claimed complete.

@@ -1,5 +1,9 @@
 # QA Test Plan
 
+> Current release evidence is recorded in `SUBMISSION.md` and
+> `17_FINAL_SUBMISSION_CHECKLIST.md`. Never execute the reset/new-run rehearsal
+> steps below against the preserved evidence run.
+
 ## Release philosophy
 
 Test the demo path, not the theoretical platform. A polished dashboard with one broken external write is a failed demo.
@@ -36,7 +40,10 @@ Test the demo path, not the theoretical platform. A polished dashboard with one 
 
 ### GitHub
 
-- Installation/token path works in production.
+- The repository-scoped controlled-demo credential path works in production.
+- GitHub App pre-install URL generation works; external consent/callback,
+  repository registration, and installation-token execution remain a separate
+  unchecked production gate.
 - Branch name is unique.
 - Commit exists on expected branch.
 - Draft PR targets expected base branch.
@@ -67,8 +74,8 @@ Test the demo path, not the theoretical platform. A polished dashboard with one 
 
 Run these in order:
 
-1. Cold browser, new run, complete flow.
-2. Second new run after reset.
+1. Cold browser, read-only preserved flow, or a complete disposable run.
+2. Second disposable run after reset; never reset the preserved evidence run.
 3. CI slow-path recovery.
 4. GitHub write failure fallback.
 5. Realtime disconnect fallback.
