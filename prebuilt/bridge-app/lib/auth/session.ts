@@ -33,6 +33,7 @@ export class AuthError extends Error {
     readonly code:
       | "missing_authorization"
       | "invalid_token"
+      | "anonymous_forbidden"
       | "participant_not_bootstrapped"
       | "role_forbidden"
       | "run_forbidden",
@@ -42,7 +43,9 @@ export class AuthError extends Error {
   }
 }
 
-function bearerToken(request: Request): string {
+export function requireBearerToken(
+  request: Request | NextRequest,
+): string {
   const authorization = request.headers.get("authorization");
   const match = authorization?.match(/^Bearer ([^\s]+)$/);
   if (!match) {
@@ -58,7 +61,7 @@ const liveDependencies: AuthDependencies = {
     if (error || !data.user) return null;
     return {
       id: data.user.id,
-      isAnonymous: Boolean(data.user.is_anonymous),
+      isAnonymous: data.user.is_anonymous !== false,
     };
   },
 
@@ -93,9 +96,20 @@ export async function requireSupabaseUser(
   request: Request | NextRequest,
   dependencies: AuthDependencies = liveDependencies,
 ): Promise<VerifiedSupabaseUser> {
-  const token = bearerToken(request);
+  const token = requireBearerToken(request);
   const user = await dependencies.getUser(token);
   if (!user) throw new AuthError(401, "invalid_token");
+  return user;
+}
+
+export async function requireHumanUser(
+  request: Request | NextRequest,
+  dependencies: AuthDependencies = liveDependencies,
+): Promise<VerifiedSupabaseUser> {
+  const user = await requireSupabaseUser(request, dependencies);
+  if (user.isAnonymous !== false) {
+    throw new AuthError(403, "anonymous_forbidden");
+  }
   return user;
 }
 
@@ -108,7 +122,7 @@ export async function requireParticipant(
   ],
   dependencies: AuthDependencies = liveDependencies,
 ): Promise<ParticipantSession> {
-  const token = bearerToken(request);
+  const token = requireBearerToken(request);
   const user = await dependencies.getUser(token);
   if (!user) throw new AuthError(401, "invalid_token");
   const participant = await dependencies.getParticipant(user.id, token);
@@ -146,7 +160,7 @@ export async function requireRunParticipant(
   );
   if (participant.role === "operator") return participant;
 
-  const token = bearerToken(request);
+  const token = requireBearerToken(request);
   const isMember = await dependencies.hasRunMembership(
     participant.userId,
     runId,

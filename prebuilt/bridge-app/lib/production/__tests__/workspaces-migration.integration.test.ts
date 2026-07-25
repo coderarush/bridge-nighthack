@@ -183,18 +183,144 @@ values
     'customer'
   );
 
+create or replace function bridge_test.reject_workspace_created_audit()
+returns trigger
+language plpgsql
+as $$
+begin
+  if new.action = 'workspace.created'
+    and new.metadata ->> 'slug' = 'rollback-team'
+  then
+    raise exception 'test audit rejection'
+      using errcode = 'PT001';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger bridge_test_reject_workspace_created_audit
+before insert on public.workspace_audit_logs
+for each row execute function bridge_test.reject_workspace_created_audit();
+
 set role service_role;
 
-select public.service_create_workspace(
+do $$
+begin
+  perform public.service_create_workspace_with_audit(
+    'Rollback Team',
+    'rollback-team',
+    '11111111-1111-4111-8111-111111111111'
+  );
+  raise exception 'audit rejection did not abort workspace creation';
+exception
+  when sqlstate 'PT001' then null;
+end;
+$$;
+
+reset role;
+
+select bridge_test.assert_true(
+  not exists (
+    select 1 from public.workspaces where slug = 'rollback-team'
+  ),
+  'audit failure must roll back workspace creation'
+);
+select bridge_test.assert_true(
+  not exists (
+    select 1
+    from public.workspace_memberships membership
+    join public.workspaces workspace on workspace.id = membership.workspace_id
+    where workspace.slug = 'rollback-team'
+  ),
+  'audit failure must roll back owner membership creation'
+);
+
+drop trigger bridge_test_reject_workspace_created_audit
+on public.workspace_audit_logs;
+drop function bridge_test.reject_workspace_created_audit();
+
+create or replace function bridge_test.reject_github_onboarding_audit()
+returns trigger
+language plpgsql
+as $$
+begin
+  if new.action = 'github_app.installation_connected'
+    and new.metadata ->> 'accountLogin' = 'rollback-org'
+  then
+    raise exception 'test onboarding audit rejection'
+      using errcode = 'PT002';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger bridge_test_reject_github_onboarding_audit
+before insert on public.workspace_audit_logs
+for each row execute function bridge_test.reject_github_onboarding_audit();
+
+set role service_role;
+
+select public.service_create_workspace_with_audit(
   'Alpha Team',
   'alpha-team',
   '11111111-1111-4111-8111-111111111111'
 );
-select public.service_create_workspace(
+select public.service_create_workspace_with_audit(
   'Beta Team',
   'beta-team',
   '22222222-2222-4222-8222-222222222222'
 );
+
+do $$
+begin
+  perform public.service_complete_github_app_onboarding(
+    p_workspace_id =>
+      (select id from public.workspaces where slug = 'alpha-team'),
+    p_user_id => '11111111-1111-4111-8111-111111111111',
+    p_installation_reference_ciphertext =>
+      'v1.AAAAAAAAAAAAAAAA.YWJj.AAAAAAAAAAAAAAAAAAAAAA',
+    p_installation_reference_digest => repeat('3', 64),
+    p_account_id => 2003,
+    p_account_login => 'rollback-org',
+    p_account_type => 'Organization',
+    p_repository_selection => 'selected',
+    p_installed_at => now(),
+    p_permissions => '{}'::jsonb,
+    p_events => array['installation'],
+    p_repositories =>
+      '[{"id":3003,"owner":"rollback-org","name":"rollback","defaultBranch":"main"}]'::jsonb
+  );
+  raise exception 'audit rejection did not abort GitHub onboarding';
+exception
+  when sqlstate 'PT002' then null;
+end;
+$$;
+
+reset role;
+
+select bridge_test.assert_true(
+  not exists (
+    select 1
+    from public.github_app_installations
+    where installation_reference_digest = repeat('3', 64)
+  ),
+  'audit failure must roll back GitHub installation persistence'
+);
+select bridge_test.assert_true(
+  not exists (
+    select 1
+    from public.repositories
+    where full_name = 'rollback-org/rollback'
+  ),
+  'audit failure must roll back GitHub repository persistence'
+);
+
+drop trigger bridge_test_reject_github_onboarding_audit
+on public.workspace_audit_logs;
+drop function bridge_test.reject_github_onboarding_audit();
+
+set role service_role;
+
 select public.service_set_workspace_membership(
   (select id from public.workspaces where slug = 'alpha-team'),
   '33333333-3333-4333-8333-333333333333',
@@ -221,48 +347,52 @@ select public.service_store_secret_reference(
   'vault://beta/github-app'
 );
 
-select public.service_register_github_installation(
-  (select id from public.workspaces where slug = 'alpha-team'),
-  1001,
-  2001,
-  'alpha-org',
-  'Organization',
-  'selected',
-  now()
+select public.service_complete_github_app_onboarding(
+  p_workspace_id =>
+    (select id from public.workspaces where slug = 'alpha-team'),
+  p_user_id => '11111111-1111-4111-8111-111111111111',
+  p_installation_reference_ciphertext =>
+    'v1.AAAAAAAAAAAAAAAA.YWxwaGE.AAAAAAAAAAAAAAAAAAAAAA',
+  p_installation_reference_digest => repeat('1', 64),
+  p_account_id => 2001,
+  p_account_login => 'alpha-org',
+  p_account_type => 'Organization',
+  p_repository_selection => 'selected',
+  p_installed_at => now(),
+  p_permissions => '{}'::jsonb,
+  p_events => array['installation'],
+  p_repositories =>
+    '[{"id":3001,"owner":"alpha-org","name":"payments","defaultBranch":"main"}]'::jsonb
 );
-select public.service_register_github_installation(
-  (select id from public.workspaces where slug = 'beta-team'),
-  1002,
-  2002,
-  'beta-org',
-  'Organization',
-  'selected',
-  now()
+select public.service_complete_github_app_onboarding(
+  p_workspace_id =>
+    (select id from public.workspaces where slug = 'beta-team'),
+  p_user_id => '22222222-2222-4222-8222-222222222222',
+  p_installation_reference_ciphertext =>
+    'v1.AAAAAAAAAAAAAAAA.YmV0YQ.AAAAAAAAAAAAAAAAAAAAAA',
+  p_installation_reference_digest => repeat('2', 64),
+  p_account_id => 2002,
+  p_account_login => 'beta-org',
+  p_account_type => 'Organization',
+  p_repository_selection => 'selected',
+  p_installed_at => now(),
+  p_permissions => '{}'::jsonb,
+  p_events => array['installation'],
+  p_repositories =>
+    '[{"id":3002,"owner":"beta-org","name":"billing","defaultBranch":"main"}]'::jsonb
 );
 
-select public.service_register_repository(
-  (select id from public.workspaces where slug = 'alpha-team'),
+select bridge_test.assert_true(
   (
-    select id
+    select bool_and(
+      installation_id is null
+      and installation_reference_ciphertext is not null
+      and installation_reference_digest is not null
+    )
     from public.github_app_installations
-    where installation_id = 1001
+    where account_login in ('alpha-org', 'beta-org')
   ),
-  3001,
-  'alpha-org',
-  'payments',
-  'main'
-);
-select public.service_register_repository(
-  (select id from public.workspaces where slug = 'beta-team'),
-  (
-    select id
-    from public.github_app_installations
-    where installation_id = 1002
-  ),
-  3002,
-  'beta-org',
-  'billing',
-  'main'
+  'new GitHub App onboarding must never persist plaintext installation ids'
 );
 
 select public.service_upsert_provider_connection(
@@ -400,19 +530,6 @@ select public.service_start_orchestration_attempt(
   'beta-worker'
 );
 
-select public.service_append_workspace_audit_log(
-  (select id from public.workspaces where slug = 'alpha-team'),
-  'service',
-  'repository.registered',
-  'repository'
-);
-select public.service_append_workspace_audit_log(
-  (select id from public.workspaces where slug = 'beta-team'),
-  'service',
-  'repository.registered',
-  'repository'
-);
-
 select bridge_test.assert_true(
   not has_function_privilege(
     'authenticated',
@@ -422,12 +539,66 @@ select bridge_test.assert_true(
   'authenticated must not execute service mutation RPCs'
 );
 select bridge_test.assert_true(
-  has_function_privilege(
+  not has_function_privilege(
     'service_role',
     'public.service_create_workspace(text,text,uuid)',
     'execute'
   ),
-  'service role must execute service mutation RPCs'
+  'service role must not bypass audited workspace creation'
+);
+select bridge_test.assert_true(
+  not has_function_privilege(
+    'service_role',
+    'public.service_register_github_installation(uuid,bigint,bigint,text,text,text,timestamptz,jsonb,text[],uuid)',
+    'execute'
+  ),
+  'service role must not execute the legacy plaintext installation RPC'
+);
+select bridge_test.assert_true(
+  has_function_privilege(
+    'service_role',
+    'public.service_complete_github_app_onboarding(uuid,uuid,text,text,bigint,text,text,text,timestamptz,jsonb,text[],jsonb)',
+    'execute'
+  ),
+  'service role must execute atomic encrypted GitHub onboarding'
+);
+select bridge_test.assert_true(
+  not has_function_privilege(
+    'authenticated',
+    'public.service_create_workspace_with_audit(text,text,uuid)',
+    'execute'
+  ),
+  'authenticated must not execute atomic workspace creation'
+);
+select bridge_test.assert_true(
+  not has_function_privilege(
+    'anon',
+    'public.service_create_workspace_with_audit(text,text,uuid)',
+    'execute'
+  ),
+  'anonymous users must not execute atomic workspace creation'
+);
+select bridge_test.assert_true(
+  has_function_privilege(
+    'service_role',
+    'public.service_create_workspace_with_audit(text,text,uuid)',
+    'execute'
+  ),
+  'service role must execute atomic workspace creation'
+);
+select bridge_test.assert_true(
+  (
+    select count(*)
+    from public.workspace_audit_logs audit
+    join public.workspaces workspace on workspace.id = audit.workspace_id
+    where audit.action = 'workspace.created'
+      and audit.actor_kind = 'user'
+      and audit.actor_user_id = workspace.created_by_user_id
+      and audit.target_type = 'workspace'
+      and audit.target_id = workspace.id::text
+      and audit.metadata ->> 'slug' = workspace.slug
+  ) = 2,
+  'atomic creation must append one attributed audit event per workspace'
 );
 select bridge_test.assert_true(
   not has_table_privilege('authenticated', 'public.repositories', 'insert'),
@@ -445,7 +616,7 @@ begin
     (
       select id
       from public.github_app_installations
-      where installation_id = 1002
+      where account_login = 'beta-org'
     ),
     3999,
     'alpha-org',
@@ -673,8 +844,8 @@ select bridge_test.assert_true(
   'alpha owner must see only the alpha secret reference'
 );
 select bridge_test.assert_true(
-  (select count(*) from public.workspace_audit_logs) = 1,
-  'alpha owner must see only the alpha audit log'
+  (select count(*) from public.workspace_audit_logs) = 2,
+  'alpha owner must see only the alpha audit logs'
 );
 
 set request.jwt.claim.sub = '33333333-3333-4333-8333-333333333333';
@@ -693,8 +864,8 @@ select bridge_test.assert_true(
 
 set request.jwt.claim.sub = '44444444-4444-4444-8444-444444444444';
 select bridge_test.assert_true(
-  (select count(*) from public.workspace_audit_logs) = 1,
-  'alpha auditor must see the alpha audit log'
+  (select count(*) from public.workspace_audit_logs) = 2,
+  'alpha auditor must see the alpha audit logs'
 );
 select bridge_test.assert_true(
   (select count(*) from public.secret_references) = 0,
@@ -726,8 +897,8 @@ select bridge_test.assert_true(
   'beta owner must see only the beta secret reference'
 );
 select bridge_test.assert_true(
-  (select count(*) from public.workspace_audit_logs) = 1,
-  'beta owner must see only the beta audit log'
+  (select count(*) from public.workspace_audit_logs) = 2,
+  'beta owner must see only the beta audit logs'
 );
 
 reset role;

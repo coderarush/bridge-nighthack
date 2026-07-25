@@ -16,6 +16,9 @@ export default function Home() {
           <span>bridge</span>
         </Link>
         <div className="header-context" aria-label="Demo context">
+          <Link className="team-entry-link" href="/team">
+            Team setup
+          </Link>
           <span className="context-label">Change intake</span>
           <span className="environment-indicator">
             <span aria-hidden="true" />

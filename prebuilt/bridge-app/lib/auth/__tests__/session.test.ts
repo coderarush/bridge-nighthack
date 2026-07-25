@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   AuthError,
+  requireBearerToken,
+  requireHumanUser,
   requireParticipant,
   requireRunParticipant,
   requireSupabaseUser,
@@ -53,6 +55,20 @@ test("rejects a missing bearer token", async () => {
   );
 });
 
+test("returns only a strict bearer token for downstream authenticated RPCs", () => {
+  assert.equal(
+    requireBearerToken(request("Bearer verified-token")),
+    "verified-token",
+  );
+  assert.throws(
+    () => requireBearerToken(request("Bearer token with spaces")),
+    (error: unknown) =>
+      error instanceof AuthError &&
+      error.status === 401 &&
+      error.code === "missing_authorization",
+  );
+});
+
 test("rejects malformed and invalid bearer tokens", async () => {
   await expectAuthError(
     () => requireSupabaseUser(request("Basic nope"), dependencies()),
@@ -79,6 +95,47 @@ test("returns a verified anonymous Supabase user", async () => {
     id: "11111111-1111-4111-8111-111111111111",
     isAnonymous: true,
   });
+});
+
+test("requires a verified non-anonymous human user", async () => {
+  await expectAuthError(
+    () =>
+      requireHumanUser(
+        request("Bearer verified-token"),
+        dependencies(),
+      ),
+    403,
+    "anonymous_forbidden",
+  );
+
+  const human = await requireHumanUser(
+    request("Bearer verified-token"),
+    dependencies({
+      getUser: async () => ({
+        id: "11111111-1111-4111-8111-111111111111",
+        isAnonymous: false,
+      }),
+    }),
+  );
+  assert.deepEqual(human, {
+    id: "11111111-1111-4111-8111-111111111111",
+    isAnonymous: false,
+  });
+
+  await expectAuthError(
+    () =>
+      requireHumanUser(
+        request("Bearer verified-token"),
+        dependencies({
+          getUser: async () =>
+            ({
+              id: "11111111-1111-4111-8111-111111111111",
+            }) as { id: string; isAnonymous: boolean },
+        }),
+      ),
+    403,
+    "anonymous_forbidden",
+  );
 });
 
 test("rejects users without a bootstrapped participant profile", async () => {
