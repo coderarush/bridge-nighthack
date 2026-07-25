@@ -14,8 +14,9 @@ import type {
   PatchedFile,
   PullRequestResult,
   ValidationClient,
-  ValidationStatus,
 } from "./interfaces";
+import { requireDemoRepositoryConfig } from "../orchestrator/run-guards";
+import { evaluateRequiredCheckRuns } from "./github-checks";
 
 function octokit(): Octokit {
   const token = process.env.GITHUB_TOKEN;
@@ -24,11 +25,7 @@ function octokit(): Octokit {
 }
 
 export function demoRepoRef(): RepositoryRef {
-  return {
-    owner: process.env.GITHUB_DEMO_OWNER ?? "",
-    repo: process.env.GITHUB_DEMO_REPO ?? "atlas-store-demo",
-    baseBranch: process.env.GITHUB_DEMO_BASE_BRANCH ?? "demo-base",
-  };
+  return requireDemoRepositoryConfig();
 }
 
 export const githubRepositoryClient: RepositoryClient = {
@@ -173,29 +170,17 @@ export const githubRepositoryClient: RepositoryClient = {
 export const githubValidationClient: ValidationClient = {
   async checkForSha(ref, commitSha) {
     const gh = octokit();
+    const requiredCheck =
+      process.env.GITHUB_REQUIRED_CHECK?.trim() || "build";
     const checks = await gh.checks.listForRef({
       owner: ref.owner,
       repo: ref.repo,
       ref: commitSha,
+      check_name: requiredCheck,
     });
     const runs = checks.data.check_runs ?? [];
-    const url =
-      runs[0]?.html_url ??
+    const fallbackUrl =
       `https://github.com/${ref.owner}/${ref.repo}/commits/${commitSha}/checks`;
-
-    if (runs.length === 0) {
-      return { status: "queued", url };
-    }
-    const anyInProgress = runs.some((r) => r.status !== "completed");
-    if (anyInProgress) {
-      return { status: "in_progress", url };
-    }
-    const allSuccess = runs.every((r) => r.conclusion === "success");
-    const conclusion = allSuccess
-      ? "success"
-      : (runs.find((r) => r.conclusion && r.conclusion !== "success")?.conclusion as
-          | ValidationStatus["conclusion"]
-          | undefined) ?? "failure";
-    return { status: "completed", conclusion, url };
+    return evaluateRequiredCheckRuns(runs, requiredCheck, fallbackUrl);
   },
 };

@@ -127,15 +127,24 @@ export async function getRoom(runId: string): Promise<RoomAggregate | null> {
 // Append an audit event with the next sequence number.
 export async function addEvent(runId: string, e: Omit<RunEventView, "sequence" | "createdAt">) {
   const db = createServiceClient();
-  const { data: last } = await db.from("run_events").select("sequence").eq("run_id", runId).order("sequence", { ascending: false }).limit(1).maybeSingle();
-  const sequence = (last?.sequence ?? 0) + 1;
-  await db.from("run_events").insert({
-    run_id: runId, sequence, actor_type: e.actorType, actor_id: e.actorId ?? null,
-    event_type: e.eventType, stage: e.stage, status: e.status, message: e.message,
+  const { error } = await db.rpc("append_run_event", {
+    p_run_id: runId,
+    p_actor_type: e.actorType,
+    p_actor_id: e.actorId ?? null,
+    p_event_type: e.eventType,
+    p_stage: e.stage,
+    p_status: e.status,
+    p_message: e.message,
+    p_metadata: {},
   });
+  if (error) throw new Error(`Unable to append audit event: ${error.message}`);
 }
 
 export async function updateRun(runId: string, patch: Record<string, unknown>) {
   const db = createServiceClient();
-  await db.from("migration_runs").update({ ...patch, updated_at: new Date().toISOString() }).eq("id", runId);
+  const { error } = await db
+    .from("migration_runs")
+    .update({ ...patch, updated_at: new Date().toISOString() })
+    .eq("id", runId);
+  if (error) throw new Error(`Unable to update migration run: ${error.message}`);
 }

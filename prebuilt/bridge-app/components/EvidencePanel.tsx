@@ -1,36 +1,120 @@
+import type { ReactNode } from "react";
 import type { EvidenceView } from "@/lib/types";
 
 export function EvidencePanel({ evidence }: { evidence: EvidenceView }) {
-  const pass = evidence.validationConclusion === "success";
+  const hasPr = Boolean(evidence.pullRequestUrl && evidence.pullRequestNumber);
+  const hasCommit = Boolean(evidence.commitSha);
+  const ciPassed = evidence.validationConclusion === "success";
+  const ciFailed = Boolean(
+    evidence.validationConclusion && evidence.validationConclusion !== "success",
+  );
+
   return (
-    <div className="panel">
-      <strong>PR & CI evidence</strong>
-      <div style={{ marginTop: 12, display: "grid", gap: 8, fontSize: 14 }}>
-        <Row label="Branch" value={<span className="mono">{evidence.branchName}</span>} />
-        <Row label="Commit" value={<span className="mono">{evidence.commitSha?.slice(0, 7)}</span>} />
-        <Row
-          label="Pull request"
-          value={evidence.pullRequestUrl ? <a href={evidence.pullRequestUrl}>Draft PR #{evidence.pullRequestNumber} ↗</a> : "—"}
-        />
-        <Row
-          label="CI"
+    <section className="panel evidence-panel" aria-labelledby="evidence-title">
+      <div className="panel-heading">
+        <div>
+          <p className="section-eyebrow">External proof</p>
+          <h2 id="evidence-title">PR, commit, and CI</h2>
+        </div>
+        <span className={`evidence-health ${ciPassed ? "is-verified" : ""}`}>
+          <span aria-hidden="true" />
+          {ciPassed ? "Evidence verified" : "Awaiting external evidence"}
+        </span>
+      </div>
+
+      <div className="evidence-ledger" aria-live="polite">
+        <EvidenceRow
+          index="01"
+          label="Draft pull request"
+          state={hasPr ? "Created" : "Not created"}
+          tone={hasPr ? "available" : "pending"}
           value={
-            <span className={"badge " + (pass ? "green" : "")}>
-              {pass ? "● passed" : evidence.validationStatus ?? "pending"}
-              {evidence.validationUrl ? <> · <a href={evidence.validationUrl}>run ↗</a></> : null}
-            </span>
+            hasPr ? (
+              <a href={evidence.pullRequestUrl}>
+                PR #{evidence.pullRequestNumber} <span aria-hidden="true">↗</span>
+              </a>
+            ) : (
+              "Created after plan approval"
+            )
+          }
+        />
+        <EvidenceRow
+          index="02"
+          label="Commit SHA"
+          state={hasCommit ? "Recorded" : "Not committed"}
+          tone={hasCommit ? "available" : "pending"}
+          value={
+            hasCommit ? (
+              <code title={evidence.commitSha}>{evidence.commitSha?.slice(0, 7)}</code>
+            ) : (
+              "No commit evidence"
+            )
+          }
+        />
+        <EvidenceRow
+          index="03"
+          label="GitHub Actions"
+          state={
+            ciPassed
+              ? "Passed"
+              : ciFailed
+                ? evidence.validationConclusion ?? "Failed"
+                : evidence.validationStatus ?? "Waiting"
+          }
+          tone={ciPassed ? "verified" : ciFailed ? "failed" : "pending"}
+          value={
+            evidence.validationUrl ? (
+              <a href={evidence.validationUrl}>
+                Inspect check run <span aria-hidden="true">↗</span>
+              </a>
+            ) : hasCommit ? (
+              "Waiting for check run"
+            ) : (
+              "Requires exact commit SHA"
+            )
           }
         />
       </div>
-    </div>
+
+      <div className="evidence-chain" aria-label="Evidence chain">
+        <span className={hasPr ? "chain-complete" : ""}>PR</span>
+        <i aria-hidden="true" />
+        <span className={hasCommit ? "chain-complete" : ""}>SHA</span>
+        <i aria-hidden="true" />
+        <span className={ciPassed ? "chain-verified" : ""}>CI</span>
+      </div>
+
+      {evidence.branchName ? (
+        <div className="branch-evidence">
+          <span>Branch</span>
+          <code>{evidence.branchName}</code>
+        </div>
+      ) : null}
+    </section>
   );
 }
 
-function Row({ label, value }: { label: string; value: React.ReactNode }) {
+function EvidenceRow({
+  index,
+  label,
+  state,
+  tone,
+  value,
+}: {
+  index: string;
+  label: string;
+  state: string;
+  tone: "pending" | "available" | "verified" | "failed";
+  value: ReactNode;
+}) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-      <span className="muted">{label}</span>
-      <span>{value}</span>
+    <div className="evidence-row">
+      <span className="evidence-index mono">{index}</span>
+      <div className="evidence-row-label">
+        <strong>{label}</strong>
+        <span>{value}</span>
+      </div>
+      <span className={`evidence-state evidence-state-${tone}`}>{state}</span>
     </div>
   );
 }

@@ -1,33 +1,56 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useBridgeAuth } from "./AuthBootstrap";
 
 const TERMINAL = ["ready_for_review", "validation_failed", "patch_failed", "scan_failed", "analysis_failed", "cancelled"];
 
-export function RunDriver({ runId, status }: { runId: string; status: string }) {
+export function RunDriver({
+  runId,
+  status,
+  onRefresh,
+}: {
+  runId: string;
+  status: string;
+  onRefresh?: () => void | Promise<void>;
+}) {
   const router = useRouter();
+  const auth = useBridgeAuth();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
   // Poll GitHub check-runs for the exact SHA while validating.
   useEffect(() => {
-    if (status !== "validating") return;
+    if (status !== "validating" || auth.participant?.role !== "operator") return;
     const t = setInterval(async () => {
-      try { await fetch(`/api/runs/${runId}/validate`, { method: "POST" }); router.refresh(); } catch {}
+      try {
+        await auth.authorizedFetch(`/api/runs/${runId}/validate`, { method: "POST" });
+        if (onRefresh) await onRefresh();
+        else router.refresh();
+      } catch {}
     }, 4000);
     return () => clearInterval(t);
-  }, [status, runId, router]);
+  }, [auth, onRefresh, status, runId, router]);
 
-  if (TERMINAL.includes(status)) return null;
+  if (TERMINAL.includes(status) || auth.participant?.role !== "operator") return null;
 
   async function run() {
     setBusy(true); setErr(null);
     try {
-      const res = await fetch(`/api/runs/${runId}/advance`, { method: "POST" });
-      if (!res.ok) throw new Error(await res.text());
-      router.refresh();
-    } catch {
-      setErr("Advance failed — check GITHUB_TOKEN / owner env.");
+      let currentStatus = status;
+      for (let step = 0; step < 3 && currentStatus !== "validating"; step += 1) {
+        const res = await auth.authorizedFetch(`/api/runs/${runId}/advance`, {
+          method: "POST",
+        });
+        const payload = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(payload.error ?? "Migration advance failed.");
+        currentStatus = payload.status;
+        if (currentStatus !== "planning") break;
+      }
+      if (onRefresh) await onRefresh();
+      else router.refresh();
+    } catch (error) {
+      setErr(error instanceof Error ? error.message : "Migration advance failed.");
     } finally { setBusy(false); }
   }
 

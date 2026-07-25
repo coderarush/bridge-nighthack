@@ -1,43 +1,141 @@
 import Link from "next/link";
-import { DEMO_RUN_ID } from "@/lib/demo";
+import { CreateMigrationButton } from "@/components/CreateMigrationButton";
+import { seedRoom } from "@/lib/seed/room";
 
 export default function Home() {
+  const { change, repository, impacts } = seedRoom;
+  const repositoryName = `${repository.owner}/${repository.name}`;
+
   return (
-    <main className="container">
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 28 }}>
-        <div style={{ width: 28, height: 28, borderRadius: 8, background: "var(--brand)" }} />
-        <strong style={{ fontSize: 18 }}>Bridge</strong>
-        <span className="badge" style={{ marginLeft: "auto" }}>NightHack demo</span>
-      </div>
+    <main className="intake-shell">
+      <header className="app-header">
+        <Link className="brand-lockup" href="/" aria-label="Bridge home">
+          <span className="brand-mark" aria-hidden="true">
+            <span />
+          </span>
+          <span>bridge</span>
+        </Link>
+        <div className="header-context" aria-label="Demo context">
+          <span className="context-label">Change intake</span>
+          <span className="environment-indicator">
+            <span aria-hidden="true" />
+            Demo workspace
+          </span>
+        </div>
+      </header>
 
-      <h1 style={{ fontSize: 44, lineHeight: 1.1, margin: "12px 0", maxWidth: 760 }}>
-        From a breaking API change to a reviewed pull request.
-      </h1>
-      <p className="muted" style={{ fontSize: 18, maxWidth: 720 }}>
-        A provider ships a breaking change. Bridge detects it, finds the exact customer
-        code that will break, writes a bounded patch, validates it in CI, opens a draft
-        PR, and gives the provider and customer a shared migration room. Dependabot for
-        APIs — with the migration actually done.
-      </p>
-
-      <div style={{ display: "flex", gap: 12, margin: "28px 0" }}>
-        <Link className="btn" href="/change/atlaspay-v2">See the AtlasPay change →</Link>
-        <Link className="btn secondary" href={`/room/${DEMO_RUN_ID}`}>Open a migration room</Link>
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 16, marginTop: 24 }}>
-        {[
-          ["Detect", "Normalize the provider contract diff into one breaking-change record."],
-          ["Map impact", "Find the exact call sites — and ignore look-alike strings."],
-          ["Patch", "Deterministic key rename. No LLM on the critical path."],
-          ["Validate", "Tie the result to the exact commit's GitHub Actions run."],
-        ].map(([t, d]) => (
-          <div className="panel" key={t}>
-            <strong>{t}</strong>
-            <p className="muted" style={{ margin: "8px 0 0", fontSize: 14 }}>{d}</p>
+      <section className="intake-workspace" aria-labelledby="change-heading">
+        <div className="intake-primary">
+          <div className="change-kicker">
+            <span className="severity-mark" aria-hidden="true">!</span>
+            Breaking contract change
+            <span className="change-id mono">CHG-ATLAS-V2</span>
           </div>
-        ))}
-      </div>
+
+          <div className="change-title-row">
+            <div>
+              <p className="provider-version">
+                {change.provider} {change.fromVersion} <span aria-hidden="true">→</span> {change.toVersion}
+              </p>
+              <h1 id="change-heading">
+                AtlasPay v2 contains <span>1 breaking request change.</span>
+              </h1>
+            </div>
+            <span className="badge breaking">Breaking</span>
+          </div>
+
+          <div className="operation-bar">
+            <span className="method-label">POST</span>
+            <code>/payments</code>
+            <Link href="/change/atlaspay-v2">Inspect contract evidence</Link>
+          </div>
+
+          <section className="contract-diff" aria-labelledby="contract-diff-title">
+            <div className="section-heading-row">
+              <div>
+                <p className="section-eyebrow">Request body</p>
+                <h2 id="contract-diff-title">Field contract</h2>
+              </div>
+              <span className="diff-scope">1 removal · 1 required field</span>
+            </div>
+
+            <div className="field-comparison">
+              <div className="field-state field-state-before">
+                <div className="field-state-header">
+                  <span>v1 · removed</span>
+                  <span className="field-status removed-status">Removed</span>
+                </div>
+                <code>payment_method</code>
+                <p>string · request property</p>
+              </div>
+              <span className="diff-arrow" aria-hidden="true">→</span>
+              <div className="field-state field-state-after">
+                <div className="field-state-header">
+                  <span>v2 · replacement</span>
+                  <span className="field-status required-status">Required</span>
+                </div>
+                <code>payment_method_id</code>
+                <p>string · request property</p>
+              </div>
+            </div>
+
+            <pre className="compact-diff" aria-label="Request field diff">
+              <code>
+                <span className="diff-line diff-line-removed">- payment_method: pmToken</span>
+                <span className="diff-line diff-line-added">+ payment_method_id: pmToken</span>
+              </code>
+            </pre>
+          </section>
+        </div>
+
+        <aside className="intake-side" aria-label="Migration setup">
+          <div className="setup-heading">
+            <p className="section-eyebrow">Target</p>
+            <h2>Create migration</h2>
+            <p>Bridge will scan this repository against the AtlasPay contract change.</p>
+          </div>
+
+          <div className="repository-field">
+            <span className="field-label">Repository</span>
+            <div className="repository-value">
+              <span className="repository-icon mono" aria-hidden="true">&lt;/&gt;</span>
+              <span>
+                <strong>{repositoryName}</strong>
+                <small>Base branch · {repository.defaultBranch}</small>
+              </span>
+              <span className="fixed-label">Fixed demo</span>
+            </div>
+          </div>
+
+          <div className="scan-preview" aria-label="Expected deterministic scan">
+            <div className="scan-count">
+              <strong>{impacts.length}</strong>
+              <span>verified call sites</span>
+            </div>
+            <div className="scan-count excluded">
+              <strong>3</strong>
+              <span>look-alikes excluded</span>
+            </div>
+          </div>
+
+          <ul className="guardrail-list">
+            <li><span aria-hidden="true">01</span> Bounded key rename only</li>
+            <li><span aria-hidden="true">02</span> Draft pull request, never auto-merge</li>
+            <li><span aria-hidden="true">03</span> CI verified against the exact commit</li>
+          </ul>
+
+          <div className="intake-action">
+            <CreateMigrationButton />
+            <p className="action-note">Creates a migration room for review.</p>
+          </div>
+        </aside>
+      </section>
+
+      <footer className="intake-footer">
+        <span>Provider evidence attached</span>
+        <span className="mono">{change.operation}</span>
+        <span>Deterministic AtlasPay recipe</span>
+      </footer>
     </main>
   );
 }

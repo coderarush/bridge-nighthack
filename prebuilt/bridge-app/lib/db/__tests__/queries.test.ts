@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
-import { createServer, type Server } from "node:http";
+import {
+  createServer,
+  type IncomingMessage,
+  type Server,
+  type ServerResponse,
+} from "node:http";
 import { getRoom } from "../queries";
 
 const originalEnv = {
@@ -23,14 +28,16 @@ afterEach(async () => {
   }
 });
 
-async function useFakeSupabase(handler: Parameters<typeof createServer>[0]) {
+async function useFakeSupabase(
+  handler: (request: IncomingMessage, response: ServerResponse) => void,
+) {
   server = createServer(handler);
   await new Promise<void>((resolve) => server?.listen(0, "127.0.0.1", resolve));
   const address = server.address();
   assert(address && typeof address !== "string");
   process.env.NEXT_PUBLIC_SUPABASE_URL = `http://127.0.0.1:${address.port}`;
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "test-publishable-key";
-  delete process.env.SUPABASE_SECRET_KEY;
+  process.env.SUPABASE_SECRET_KEY = "test-service-key";
 }
 
 test("returns null when a configured room does not exist", async () => {
