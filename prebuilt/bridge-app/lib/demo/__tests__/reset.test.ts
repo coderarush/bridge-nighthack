@@ -2,8 +2,10 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   DemoResetError,
+  prepareDemoRun,
   requireDemoResetTarget,
   resetDemoRun,
+  type DemoPrepareExecutor,
   type DemoResetExecutor,
 } from "../reset";
 
@@ -113,4 +115,27 @@ test("reports a missing configured run without fabricating success", async () =>
     (error: unknown) =>
       error instanceof DemoResetError && error.code === "RUN_NOT_FOUND",
   );
+});
+
+test("reports whether an atomic demo preparation actually reset the run", async () => {
+  const execute: DemoPrepareExecutor = async (runId) => ({
+    runId,
+    status: "patching",
+    prepared: false,
+  });
+
+  const result = await prepareDemoRun(
+    DEMO_RUN_ID,
+    {
+      DEMO_MODE: "true",
+      NEXT_PUBLIC_DEMO_RUN_ID: DEMO_RUN_ID,
+    },
+    execute,
+  );
+
+  assert.deepEqual(result, {
+    runId: DEMO_RUN_ID,
+    status: "patching",
+    prepared: false,
+  });
 });

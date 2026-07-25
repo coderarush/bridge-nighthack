@@ -6,7 +6,7 @@ import { ATLASPAY_RECIPE } from "@/lib/recipe/atlaspay";
 import { demoRepoRef } from "@/lib/adapters/github";
 import { addEvent } from "@/lib/db/queries";
 import { authErrorResponse, requireOperator } from "@/lib/auth/session";
-import { resetDemoRun } from "@/lib/demo/reset";
+import { prepareDemoRun } from "@/lib/demo/reset";
 
 export const dynamic = "force-dynamic";
 
@@ -44,22 +44,28 @@ export async function POST(req: NextRequest) {
   if (process.env.DEMO_MODE === "true") {
     const runId = process.env.NEXT_PUBLIC_DEMO_RUN_ID?.trim() ?? "";
     try {
-      await resetDemoRun(runId);
-      await addEvent(runId, {
-        actorType: "system",
-        eventType: "run.created",
-        stage: "queued",
-        status: "ok",
-        message: "Run created for AtlasPay v1 → v2.",
+      const prepared = await prepareDemoRun(runId);
+      if (prepared.prepared) {
+        await addEvent(runId, {
+          actorType: "system",
+          eventType: "run.created",
+          stage: "queued",
+          status: "ok",
+          message: "Run created for AtlasPay v1 → v2.",
+        });
+        await addEvent(runId, {
+          actorType: "system",
+          eventType: "change.analysis.completed",
+          stage: "analyzing_change",
+          status: "ok",
+          message: diff.summary,
+        });
+      }
+      return Response.json({
+        runId,
+        status: prepared.status,
+        prepared: prepared.prepared,
       });
-      await addEvent(runId, {
-        actorType: "system",
-        eventType: "change.analysis.completed",
-        stage: "analyzing_change",
-        status: "ok",
-        message: diff.summary,
-      });
-      return Response.json({ runId, status: "analyzing_change" });
     } catch (error) {
       return Response.json(
         {

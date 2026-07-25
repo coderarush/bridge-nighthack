@@ -1,4 +1,5 @@
 import { createServiceClient } from "@/lib/db/supabase";
+import type { RunStatus } from "@/lib/types";
 
 export type DemoResetEnv = {
   [key: string]: string | undefined;
@@ -39,6 +40,16 @@ export type DemoResetResult = {
   githubArtifacts: "preserved";
   warning: string;
 };
+
+export type DemoPrepareResult = {
+  runId: string;
+  status: RunStatus;
+  prepared: boolean;
+};
+
+export type DemoPrepareExecutor = (
+  runId: string,
+) => Promise<DemoPrepareResult | null>;
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -93,6 +104,49 @@ const liveResetExecutor: DemoResetExecutor = async (runId) => {
       }
     : null;
 };
+
+const livePrepareExecutor: DemoPrepareExecutor = async (runId) => {
+  const db = createServiceClient();
+  const { data, error } = await db
+    .rpc("prepare_demo_run", { p_run_id: runId })
+    .maybeSingle();
+
+  if (error) {
+    throw new DemoResetError(
+      "RESET_FAILED",
+      `Unable to prepare demo run: ${error.message}`,
+    );
+  }
+
+  const row = data as {
+    id: string;
+    status: RunStatus;
+    prepared: boolean;
+  } | null;
+  return row
+    ? {
+        runId: row.id,
+        status: row.status,
+        prepared: row.prepared,
+      }
+    : null;
+};
+
+export async function prepareDemoRun(
+  requestedRunId: string,
+  env: DemoResetEnv = process.env,
+  execute: DemoPrepareExecutor = livePrepareExecutor,
+): Promise<DemoPrepareResult> {
+  const runId = requireDemoResetTarget(requestedRunId, env);
+  const preparedRun = await execute(runId);
+  if (!preparedRun) {
+    throw new DemoResetError(
+      "RUN_NOT_FOUND",
+      "The configured demo run does not exist.",
+    );
+  }
+  return preparedRun;
+}
 
 export async function resetDemoRun(
   requestedRunId: string,
