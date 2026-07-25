@@ -1,0 +1,21 @@
+BRIDGE NIGHTHACK DEMO CARD
+
+One sentence: Bridge turns breaking API changes into tested draft pull requests.
+
+Story: AtlasPay v1 -> v2 removes payment_method and requires payment_method_id.
+
+Flow: change -> 3 impacts (false positives ignored) -> shared room -> approval
+      -> real draft PR -> exact-SHA CI pass -> ready for review.
+
+TIMING
+- Build ends 11:45 PM. Doors lock 11:00 PM. Tag nighthack-start at 7:00 PM.
+- At-table judging 12:15 AM (4-6 min). Top 10 stage 12:45 AM (90 SECONDS).
+
+90-SECOND STAGE BEATS
+  0:00 category + show breaking change
+  0:15 create migration -> 3 impacted files
+  0:40 deterministic patch -> real draft PR (3-line diff) -> green check on the SHA
+  1:05 browser B: provider approves -> A goes green live
+  1:30 land it: "Dependabot for APIs, with the migration actually done."
+
+RULES: Never wait silently. Never fake an external success. Draft PRs only, never merge.

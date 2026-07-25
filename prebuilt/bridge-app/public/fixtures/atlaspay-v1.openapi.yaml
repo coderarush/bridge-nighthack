@@ -1,0 +1,46 @@
+openapi: 3.0.3
+info:
+  title: AtlasPay API
+  version: "1.0.0"
+  description: AtlasPay payments API (v1).
+servers:
+  - url: https://api.atlaspay.dev/v1
+paths:
+  /payments:
+    post:
+      operationId: createPayment
+      summary: Create a payment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePaymentRequest"
+      responses:
+        "200":
+          description: Payment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+components:
+  schemas:
+    CreatePaymentRequest:
+      type: object
+      required: [amount, currency, payment_method]
+      properties:
+        amount:
+          type: integer
+          description: Amount in the smallest currency unit.
+        currency:
+          type: string
+        payment_method:
+          type: string
+          description: Payment method token (e.g. pm_...).
+    Payment:
+      type: object
+      properties:
+        id: { type: string }
+        amount: { type: integer }
+        currency: { type: string }
+        status: { type: string, enum: [succeeded, pending, failed] }

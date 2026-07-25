@@ -1,0 +1,20 @@
+# ---- Public (safe for the browser) ----
+NEXT_PUBLIC_APP_URL=
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+
+# ---- Server only (NEVER exposed to the client) ----
+SUPABASE_SECRET_KEY=
+
+# GitHub: a fine-grained Personal Access Token replaces the GitHub App for NightHack.
+# Scope it to ONLY the demo repo with: Contents R/W, Pull requests R/W, Actions Read,
+# Checks Read. Backend-only. (Simpler than a GitHub App, identical demo, less to break.)
+GITHUB_TOKEN=
+GITHUB_DEMO_OWNER=
+GITHUB_DEMO_REPO=atlas-store-demo
+GITHUB_DEMO_BASE_BRANCH=demo-base
+
+# Optional: only for human-readable explanation, never on the critical path.
+MODEL_API_KEY=
+
+DEMO_MODE=true
