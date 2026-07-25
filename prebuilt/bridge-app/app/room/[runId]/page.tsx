@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { getRoom } from "@/lib/db/queries";
 import { Timeline } from "@/components/Timeline";
 import { ImpactedFiles } from "@/components/ImpactedFiles";
@@ -10,6 +11,7 @@ export const dynamic = "force-dynamic";
 
 export default async function RoomPage({ params }: { params: { runId: string } }) {
   const room = await getRoom(params.runId);
+  if (!room) notFound();
   const ready = room.status === "ready_for_review";
   return (
     <main className="container">

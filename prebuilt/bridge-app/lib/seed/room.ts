@@ -1,10 +1,10 @@
 import type { RoomAggregate } from "../types";
 
-// Seed aggregate used by the deployed skeleton and as a live-demo fallback.
-// LIVE-BUILD: replace with getRoom(runId) reading Supabase (see lib/db).
+// Local-only fixture state. It may show deterministic analysis, but never
+// external PR, CI, approval, or completion evidence.
 export const seedRoom: RoomAggregate = {
   runId: "demo",
-  status: "ready_for_review",
+  status: "planning",
   title: "AtlasPay v1 → v2 · atlas-store-demo",
   change: {
     provider: "AtlasPay",
@@ -19,7 +19,7 @@ export const seedRoom: RoomAggregate = {
     addedRequired: ["payment_method_id"],
     operation: "POST /payments",
   },
-  repository: { owner: "your-org", name: "atlas-store-demo", defaultBranch: "demo-base" },
+  repository: { owner: "coderarush", name: "atlas-store-demo", defaultBranch: "demo-base" },
   impacts: [
     {
       filePath: "src/checkout/create-payment.ts",
@@ -62,24 +62,8 @@ export const seedRoom: RoomAggregate = {
     { sequence: 2, actorType: "system", eventType: "change.analysis.completed", stage: "analyzing_change", status: "ok", message: "Breaking change normalized: payment_method → payment_method_id.", createdAt: "" },
     { sequence: 3, actorType: "system", eventType: "repo.scan.completed", stage: "scanning_repo", status: "ok", message: "Found 3 impacted files; ignored 3 false-positive strings.", createdAt: "" },
     { sequence: 4, actorType: "system", eventType: "plan.created", stage: "planning", status: "ok", message: "Bounded rename plan created.", createdAt: "" },
-    { sequence: 5, actorType: "user", actorId: "AtlasPay (provider)", eventType: "plan.approved", stage: "planning", status: "ok", message: "Provider approved the rename.", createdAt: "" },
-    { sequence: 6, actorType: "system", eventType: "github.pr.created", stage: "patching", status: "ok", message: "Opened draft PR #1.", createdAt: "" },
-    { sequence: 7, actorType: "system", eventType: "validation.passed", stage: "validating", status: "ok", message: "GitHub Actions passed for commit.", createdAt: "" },
-    { sequence: 8, actorType: "system", eventType: "run.ready_for_review", stage: "ready_for_review", status: "ok", message: "Migration ready for review.", createdAt: "" },
   ],
-  comments: [
-    { participantName: "AtlasPay", role: "provider", body: "Confirmed — value semantics are unchanged, only the key renamed.", createdAt: "" },
-  ],
-  approvals: [
-    { participantName: "AtlasPay", decision: "approved", note: "Patch is limited to AtlasPay request fields.", planVersion: 1, createdAt: "" },
-  ],
-  evidence: {
-    branchName: "bridge/atlaspay-v2-demo",
-    commitSha: "0000000",
-    pullRequestUrl: "https://github.com/your-org/atlas-store-demo/pull/1",
-    pullRequestNumber: 1,
-    validationUrl: "https://github.com/your-org/atlas-store-demo/actions",
-    validationStatus: "completed",
-    validationConclusion: "success",
-  },
+  comments: [],
+  approvals: [],
+  evidence: {},
 };
