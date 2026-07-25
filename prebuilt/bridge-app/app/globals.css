@@ -1777,6 +1777,7 @@ code,
 
   .team-layout {
     grid-template-columns: 1fr;
+    align-content: start;
   }
 
   .team-rail {
