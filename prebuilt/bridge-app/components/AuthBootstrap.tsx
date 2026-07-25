@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import type { ParticipantSession } from "@/lib/auth/session";
+import { readInviteUrl } from "@/lib/auth/invite-url";
 import { createBrowserClient } from "@/lib/db/supabase";
 
 type AuthStatus = "loading" | "ready" | "invite_required" | "error";
@@ -56,8 +57,11 @@ export function AuthBootstrap({ children }: { children: React.ReactNode }) {
         session = anonymous.data.session;
       }
 
-      const url = new URL(window.location.href);
-      const capability = url.searchParams.get("invite");
+      const invite = readInviteUrl(window.location.href);
+      const capability = invite.capability;
+      if (capability) {
+        window.history.replaceState({}, "", invite.sanitizedPath);
+      }
       const response = await fetch(
         capability ? "/api/auth/bootstrap" : "/api/auth/me",
         {
@@ -69,15 +73,6 @@ export function AuthBootstrap({ children }: { children: React.ReactNode }) {
           body: capability ? JSON.stringify({ capability }) : undefined,
         },
       );
-
-      if (capability) {
-        url.searchParams.delete("invite");
-        window.history.replaceState(
-          {},
-          "",
-          `${url.pathname}${url.search}${url.hash}`,
-        );
-      }
 
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
