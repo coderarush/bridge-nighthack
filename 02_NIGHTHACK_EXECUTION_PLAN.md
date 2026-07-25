@@ -1,5 +1,8 @@
 # NightHack Execution Plan
 
+> Historical build-window plan only. Do not use its reset/rehearsal steps on the
+> preserved evidence run; `09_DEMO_SCRIPT_AND_RUNBOOK.md` is the current runbook.
+
 ## Operating principle
 
 The build window is **4 hours 45 minutes** (7:00 PM kickoff → 11:45 PM build end).
@@ -65,7 +68,7 @@ tested, demo narration rehearsed.
 ### 8:15–9:00 — Impact scan via GitHub
 
 - Implement `RepositoryClient.getFiles` with `@octokit/rest` + the PAT (server-only).
-- Fetch the 4 target files, run the pre-built scanner, persist 3 impacts + evidence.
+- Recursively enumerate bounded TypeScript sources, require the controlled fixture subset, run the pre-built guarded scanner, and persist 3 impacts + evidence.
 
 **Gate:** the room shows the correct three impacted files with snippets; false positives ignored.
 
@@ -103,8 +106,9 @@ tested, demo narration rehearsed.
 ### 11:15–11:45 — Integration freeze + rehearsal
 
 - Stop adding features. Pin the last known-good deployment.
-- Run the full reset-and-demo flow **twice**. Capture a backup PR, backup CI evidence,
-  and a short screen recording.
+- Historical instruction: run the full reset-and-demo flow twice only on a
+  disposable run. Never reset the preserved evidence run. Capture backup PR and
+  CI evidence plus a short screen recording.
 - Rehearse **both** the 90-second stage version and the at-table version.
 
 **Gate:** two consecutive clean rehearsals; presenter can recover from any single

@@ -1,21 +1,55 @@
 BRIDGE NIGHTHACK DEMO CARD
 
-One sentence: Bridge turns breaking API changes into tested draft pull requests.
+PITCH
+When an API provider ships a breaking change, Bridge traces that contract change to
+the exact customer call sites that will fail, generates a bounded deterministic patch,
+opens a real draft pull request, and verifies the exact commit in GitHub Actions.
+Provider and customer then review the evidence, comment, and approve in one live
+migration room. Changelogs tell customers what changed. Coding agents can modify a
+repository when prompted. Bridge connects the two and carries the migration from
+contract change to verified handoff.
 
-Story: AtlasPay v1 -> v2 removes payment_method and requires payment_method_id.
+SCOPE
+- AtlasPay is fictional. This proof covers one TypeScript repository, one guarded
+  request-key rename, one draft PR, and human review. It is not arbitrary-provider,
+  arbitrary-language, autonomous-merge, or production-onboarding proof.
 
-Flow: change -> 3 impacts (false positives ignored) -> shared room -> approval
-      -> real draft PR -> exact-SHA CI pass -> ready for review.
+SETUP
+- Browser A: customer. Browser B: provider in incognito/second profile.
+- Operator provisioning stays off-screen.
+- Sessions are private short-lived participant invites. Never show invite values,
+  tokens, PATs, Supabase keys, passwords, terminal, or dashboards.
+- Product: https://bridge-nighthack.vercel.app
+- Room: https://bridge-nighthack.vercel.app/room/f1386415-3de2-41ad-b499-36261d2eec91
+- Draft PR: https://github.com/coderarush/atlas-store-demo/pull/1
+- Patch commit: d0d1e5dc44c49bc95315e7302157b375837d74b2
+- Validated head: 52ee5c54ccfa3831807eba894fc08372530d1fe9
+- Commit-tab answer: pre-fix retry created an empty same-tree child; final rerun added no third commit.
+- Red base: https://github.com/coderarush/atlas-store-demo/actions/runs/30142332724/job/89637894855
+- Green head: https://github.com/coderarush/atlas-store-demo/actions/runs/30142535151/job/89638422640
+- Preserved run source: 3407bf9. It scanned 4 explicit recipe paths.
+- Current application boundary: d67ce94. It was deployed without resetting this run.
+- Later recursive discovery, durable jobs, workspace onboarding, and GitHub App code
+  did not produce this run.
 
-TIMING
-- Build ends 11:45 PM. Doors lock 11:00 PM. Tag nighthack-start at 7:00 PM.
-- At-table judging 12:15 AM (4-6 min). Top 10 stage 12:45 AM (90 SECONDS).
+90-SECOND BEATS
+0:00  Fictional AtlasPay v1 -> v2: payment_method removed; payment_method_id required.
+0:13  Bridge shows exactly 3 impacted request call sites; look-alikes are excluded.
+0:30  Bounded deterministic rename -> real DRAFT PR. Never auto-merge.
+0:50  RED demo-base (3 expected errors) -> bounded diff -> GREEN check for exact head.
+1:08  Browser B shows provider role + persisted approval; Browser A shows same evidence.
+1:30  End on evidence, not animation.
 
-90-SECOND STAGE BEATS
-  0:00 category + show breaking change
-  0:15 create migration -> 3 impacted files
-  0:40 deterministic patch -> real draft PR (3-line diff) -> green check on the SHA
-  1:05 browser B: provider approves -> A goes green live
-  1:30 land it: "Dependabot for APIs, with the migration actually done."
+NON-NEGOTIABLE
+- Product returns public HTTP 200. That is reachability, not clean-run proof.
+- Green CI only counts when it is for the displayed migration SHA.
+- If Actions is slow: "The current workflow is running against this SHA; this is a
+  completed run from the same deployed workflow."
+- If a write fails: say it failed. Show preview/prior evidence only as labeled.
+- If realtime fails: show persisted update after refresh; do not claim live sync.
+- Do not comment, approve, reset, or rerun this preserved room. Use a disposable run.
+- If a required verification URL in SUBMISSION.md is unfilled, do not submit.
 
-RULES: Never wait silently. Never fake an external success. Draft PRs only, never merge.
+BASELINE
+nighthack-start points to 24f10d7 at 7:40:03 PM PDT; tag annotation records 7:39 PM.
+Do not say the tag was created at 7:00 PM.

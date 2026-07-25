@@ -1,5 +1,10 @@
 # Bridge NightHack Build Packet
 
+This file preserves the original execution brief and priority order. Use
+`SUBMISSION.md`, `DISCLOSURE.md`, and
+`18_PRODUCTION_ARCHITECTURE_AND_JUDGE_QA.md` for the current evidence and
+production boundary.
+
 **Event:** Founders Inc NightHack  
 **Build window:** Friday, July 24, 2026 — kickoff **7:00 p.m.**, build ends **11:45 p.m.** PDT (**4h45m**). Doors lock 11:00 p.m. At-table judging 12:15 a.m.; Top-10 live demos 12:45 a.m. (**90 seconds each**).  
 **Constraint:** Production deployment and live product demo; no localhost and no slide deck.  
@@ -17,9 +22,9 @@ Do not build a general coding agent, an API documentation platform, an SDK gener
 
 A judge can watch the full story in four to six minutes without hearing architecture excuses:
 
-1. A provider change exists as two hosted OpenAPI files.
+1. A change for AtlasPay, a fictional controlled provider fixture, exists as two hosted OpenAPI files.
 2. Bridge detects and summarizes the breaking change.
-3. Bridge finds two or three impacted files in a real GitHub repository.
+3. Bridge finds exactly three impacted files in a real GitHub repository.
 4. Bridge creates a migration run with a visible timeline.
 5. Bridge creates a branch, commits a deterministic patch, and opens a draft PR.
 6. GitHub Actions returns a real passing check.
@@ -30,7 +35,7 @@ A judge can watch the full story in four to six minutes without hearing architec
 
 **P0:** deployed app, one real GitHub repo, one real PR, one real passing CI run, coherent demo story.  
 **P1:** impacted-file evidence, migration timeline, multiplayer presence, approval.  
-**P2:** polished animations, multiple providers, generalized AI patching, billing, onboarding.
+**P2 (original build priority):** polished animations, multiple providers, generalized AI patching, billing, and generalized onboarding.
 
 ## Packet map
 
@@ -51,9 +56,12 @@ A judge can watch the full story in four to six minutes without hearing architec
 - `15_POST_HACKATHON_ROADMAP.md` - 72-hour, 30-day, and 90-day path.
 - `16_CLAUDE_CODE_MASTER_PROMPT.md` - build-agent instructions for disciplined execution.
 - `17_FINAL_SUBMISSION_CHECKLIST.md` - final hour and demo-table checklist.
+- `18_PRODUCTION_ARCHITECTURE_AND_JUDGE_QA.md` - honest team deployment model, production boundaries, and technical judge answers.
+- `SUBMISSION.md` - verified public links, judge test procedure, evidence chain, and exact before/after wording.
 - `DISCLOSURE.md` - pre-existing work disclosure (per the rules).
 - `PREBUILD_MANIFEST.md` - inventory of everything in `prebuilt/`.
-- `prebuilt/bridge-app/` - deployable Next.js skeleton + deterministic engine.
+- `SETUP_STATUS.md` - archival setup snapshot; not an operating runbook.
+- `prebuilt/bridge-app/` - Next.js product, deterministic engine, and later production foundations.
 - `prebuilt/atlas-store-demo/` - sample customer repo with CI + fixtures.
 
 ## Prebuild strategy (per the actual rules)

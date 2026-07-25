@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- The public production URL is `https://bridge-app-zeta.vercel.app`.
+- The canonical public production URL is `https://bridge-nighthack.vercel.app`; the temporary `bridge-app-zeta` alias was removed.
 - The only customer repository is `coderarush/atlas-store-demo`, based on `demo-base`.
 - The only transform is `payment_method` to `payment_method_id` in three guarded AtlasPay request objects.
 - Strings, comments, identifiers, formatting, and `src/util/logging.ts` must not change.
