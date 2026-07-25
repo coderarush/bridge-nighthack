@@ -85,6 +85,7 @@ export function DemoResetControl({
           className="btn"
           disabled={!canReset || busy}
           onClick={reset}
+          aria-busy={busy}
         >
           {busy ? "Resetting…" : "Reset database demo state"}
         </button>

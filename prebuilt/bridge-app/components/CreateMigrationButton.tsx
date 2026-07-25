@@ -29,6 +29,7 @@ export function CreateMigrationButton() {
         className="btn"
         onClick={create}
         disabled={busy || auth.participant?.role !== "operator"}
+        aria-busy={busy}
       >
         {busy
           ? "Creating…"

@@ -56,7 +56,12 @@ export function RunDriver({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6, marginLeft: "auto" }}>
-      <button className="btn" onClick={run} disabled={busy || status === "validating"}>
+      <button
+        className="btn"
+        onClick={run}
+        disabled={busy || status === "validating"}
+        aria-busy={busy || status === "validating"}
+      >
         {status === "validating" ? "Validating on GitHub…" : busy ? "Running…" : "Run migration → draft PR"}
       </button>
       {err ? <span className="muted" style={{ fontSize: 11, color: "var(--amber)" }}>{err}</span> : null}

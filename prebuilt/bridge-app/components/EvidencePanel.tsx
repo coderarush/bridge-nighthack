@@ -30,11 +30,16 @@ export function EvidencePanel({ evidence }: { evidence: EvidenceView }) {
           tone={hasPr ? "available" : "pending"}
           value={
             hasPr ? (
-              <a href={evidence.pullRequestUrl}>
+              <a
+                href={evidence.pullRequestUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 PR #{evidence.pullRequestNumber} <span aria-hidden="true">↗</span>
+                <span className="sr-only"> (opens in new tab)</span>
               </a>
             ) : (
-              "Created after plan approval"
+              "Created after patch commit"
             )
           }
         />
@@ -64,8 +69,13 @@ export function EvidencePanel({ evidence }: { evidence: EvidenceView }) {
           tone={ciPassed ? "verified" : ciFailed ? "failed" : "pending"}
           value={
             evidence.validationUrl ? (
-              <a href={evidence.validationUrl}>
+              <a
+                href={evidence.validationUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 Inspect check run <span aria-hidden="true">↗</span>
+                <span className="sr-only"> (opens in new tab)</span>
               </a>
             ) : hasCommit ? (
               "Waiting for check run"

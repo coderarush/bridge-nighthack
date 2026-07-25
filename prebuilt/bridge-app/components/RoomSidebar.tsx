@@ -283,38 +283,41 @@ export function RoomSidebar({
         ))}
       </div>
 
-      <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-        <input
-          value={draft}
-          onChange={(event) => {
-            setDraft(event.target.value);
-            if (commentState.status !== "idle") {
-              setCommentState({ status: "idle" });
+      <div className="room-comment-composer">
+        <div className="room-comment-field">
+          <label className="field-label" htmlFor="room-comment">
+            Comment
+          </label>
+          <textarea
+            id="room-comment"
+            className="room-comment-textarea"
+            value={draft}
+            onChange={(event) => {
+              setDraft(event.target.value);
+              if (commentState.status !== "idle") {
+                setCommentState({ status: "idle" });
+              }
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                void send();
+              }
+            }}
+            placeholder={
+              canComment ? "Comment…" : "Participant access required"
             }
-          }}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") void send();
-          }}
-          placeholder={
-            canComment ? "Comment…" : "Participant access required"
-          }
-          disabled={!canComment || commentBusy}
-          maxLength={2000}
-          style={{
-            flex: 1,
-            minWidth: 0,
-            background: "var(--panel-2)",
-            border: "1px solid var(--border)",
-            borderRadius: 8,
-            color: "var(--text)",
-            padding: "8px 10px",
-          }}
-        />
+            disabled={!canComment || commentBusy}
+            maxLength={2000}
+            rows={2}
+          />
+        </div>
         <button
           type="button"
           className="btn secondary"
           onClick={() => void send()}
           disabled={!canComment || commentBusy || !draft.trim()}
+          aria-busy={commentBusy}
         >
           {commentBusy ? "Sending…" : "Send"}
         </button>
@@ -362,6 +365,7 @@ export function RoomSidebar({
             disabled={
               approvalBusy || room.status !== "ready_for_review"
             }
+            aria-busy={approvalBusy}
           >
             {approvalBusy
               ? "Approving…"

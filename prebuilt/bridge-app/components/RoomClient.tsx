@@ -109,7 +109,7 @@ export function RoomClient({ runId }: { runId: string }) {
     <main className="container">
       <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <Link href="/" className="muted">← Bridge</Link>
-        <h2 style={{ margin: 0 }}>{room.title}</h2>
+        <h1 className="room-title">{room.title}</h1>
         <span className={"badge " + (ready ? "green" : "")}>
           {ready ? "● ready for review" : room.status}
         </span>

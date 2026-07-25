@@ -3,23 +3,23 @@ import type { RunEventView } from "@/lib/types";
 const stages = [
   {
     label: "Change detected",
-    detail: "AtlasPay v1 → v2",
+    detail: "Provider contract comparison",
     matches: ["change.analysis.completed"],
   },
   {
     label: "Repository scanned",
-    detail: "18 TypeScript files",
+    detail: "Bounded TypeScript discovery",
     matches: ["repo.scan.completed"],
   },
   {
-    label: "Three impacts found",
-    detail: "3 verified · 3 look-alikes excluded",
+    label: "Impacts identified",
+    detail: "Guarded call-site matches",
     matches: ["repo.scan.completed"],
   },
   {
-    label: "Migration plan approved",
-    detail: "Human approval required",
-    matches: ["plan.approved"],
+    label: "Migration plan created",
+    detail: "Bounded plan ready for review",
+    matches: ["plan.created"],
   },
   {
     label: "Patch committed",
