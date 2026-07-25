@@ -131,7 +131,7 @@ export function RoomClient({ runId }: { runId: string }) {
       <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16, marginTop: 16, alignItems: "start" }}>
         <div style={{ display: "grid", gap: 16 }}>
           <ImpactedFiles impacts={room.impacts} />
-          <EvidencePanel evidence={room.evidence} />
+          <EvidencePanel evidence={room.evidence} runStatus={room.status} />
           <Timeline events={room.events} />
         </div>
         <RoomSidebar room={room} onRefresh={loadRoom} />

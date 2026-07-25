@@ -78,6 +78,7 @@ export interface EvidenceView {
   validationUrl?: string;
   validationStatus?: string;
   validationConclusion?: string;
+  currentHeadStatus?: "matched" | "mismatched" | "unavailable" | "not_checked";
 }
 
 export interface RoomAggregate {

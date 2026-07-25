@@ -110,14 +110,14 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="scan-preview" aria-label="Expected deterministic scan">
+          <div className="scan-preview" aria-label="Controlled recipe expectations">
             <div className="scan-count">
               <strong>{impacts.length}</strong>
-              <span>verified call sites</span>
+              <span>fixture matches expected</span>
             </div>
             <div className="scan-count excluded">
-              <strong>3</strong>
-              <span>look-alikes excluded</span>
+              <strong>AST</strong>
+              <span>request-shape guard</span>
             </div>
           </div>
 

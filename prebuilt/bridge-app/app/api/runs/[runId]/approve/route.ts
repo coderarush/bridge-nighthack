@@ -3,8 +3,14 @@ import {
   authErrorResponse,
   requireRunParticipant,
 } from "@/lib/auth/session";
+import {
+  demoRepoRef,
+  githubRepositoryClient,
+} from "@/lib/adapters/github";
 import { createServiceClient } from "@/lib/db/supabase";
 import { addEvent } from "@/lib/db/queries";
+import { readCurrentHeadStatus } from "@/lib/evidence/verification";
+import type { EvidenceView } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -40,7 +46,9 @@ export async function POST(
   const db = createServiceClient();
   const { data: run, error: runError } = await db
     .from("migration_runs")
-    .select("status, plan_version")
+    .select(
+      "status, plan_version, commit_sha, pull_request_url, pull_request_number, validation_url, validation_status, validation_conclusion",
+    )
     .eq("id", runId)
     .single();
   if (runError?.code === "PGRST116") {
@@ -64,6 +72,44 @@ export async function POST(
       },
       { status: 409 },
     );
+  }
+
+  if (decision === "approved") {
+    const evidence: EvidenceView = {
+      commitSha: run.commit_sha ?? undefined,
+      pullRequestUrl: run.pull_request_url ?? undefined,
+      pullRequestNumber: run.pull_request_number ?? undefined,
+      validationUrl: run.validation_url ?? undefined,
+      validationStatus: run.validation_status ?? undefined,
+      validationConclusion: run.validation_conclusion ?? undefined,
+    };
+    const headStatus = await readCurrentHeadStatus(evidence, async () => {
+      return githubRepositoryClient.getPullRequestHead(
+        demoRepoRef(),
+        run.pull_request_number as number,
+      );
+    });
+
+    if (headStatus === "unavailable") {
+      return Response.json(
+        {
+          error: "The current pull request head could not be verified.",
+          code: "EVIDENCE_HEAD_UNAVAILABLE",
+          retryable: true,
+        },
+        { status: 503 },
+      );
+    }
+    if (headStatus !== "matched") {
+      return Response.json(
+        {
+          error: "The pull request head no longer matches the validated commit.",
+          code: "EVIDENCE_HEAD_NOT_VERIFIED",
+          retryable: false,
+        },
+        { status: 409 },
+      );
+    }
   }
 
   const { data, error } = await db

@@ -85,8 +85,8 @@ export default function ChangePage() {
             <h2>{repository.owner}/{repository.name}</h2>
             <p className="muted">Base branch <code>{repository.defaultBranch}</code></p>
             <div className="verification-summary">
-              <span><strong>3 verified</strong> call sites</span>
-              <span><strong>3 excluded</strong> look-alikes</span>
+              <span><strong>Guarded AST</strong> recipe</span>
+              <span><strong>Draft PR</strong> only</span>
             </div>
             <p className="detail-action-copy">
               The recipe changes only the request key in verified AtlasPay call sites.

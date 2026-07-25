@@ -1,6 +1,11 @@
 import { NextRequest } from "next/server";
+import {
+  demoRepoRef,
+  githubRepositoryClient,
+} from "@/lib/adapters/github";
 import { authErrorResponse, requireRunParticipant } from "@/lib/auth/session";
 import { getRoom } from "@/lib/db/queries";
+import { projectCurrentEvidence } from "@/lib/evidence/verification";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +33,32 @@ export async function GET(request: NextRequest, context: RouteContext) {
         { status: 404 },
       );
     }
-    return Response.json({ room });
+
+    const pullRequestNumber = room.evidence.pullRequestNumber;
+    const projected = await projectCurrentEvidence(
+      room.status,
+      room.evidence,
+      async () => {
+        if (!pullRequestNumber) {
+          throw new Error("Stored pull request evidence is incomplete.");
+        }
+        return githubRepositoryClient.getPullRequestHead(
+          demoRepoRef(),
+          pullRequestNumber,
+        );
+      },
+    );
+
+    return Response.json(
+      {
+        room: {
+          ...room,
+          status: projected.runStatus,
+          evidence: projected.evidence,
+        },
+      },
+      { headers: { "Cache-Control": "private, no-store" } },
+    );
   } catch (error) {
     return Response.json(
       {

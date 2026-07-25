@@ -8,15 +8,15 @@ export function ImpactedFiles({ impacts }: { impacts: ImpactView[] }) {
           <p className="section-eyebrow">Repository scan</p>
           <h2 id="impacts-title">Verified impact</h2>
         </div>
-        <div className="impact-totals" aria-label={`${impacts.length} verified call sites and 3 look-alikes excluded`}>
-          <span><strong>{impacts.length}</strong> verified</span>
-          <span><strong>3</strong> look-alikes excluded</span>
+        <div className="impact-totals" aria-label={`${impacts.length} persisted scanner matches`}>
+          <span><strong>{impacts.length}</strong> persisted matches</span>
+          <span><strong>AST</strong> guarded recipe</span>
         </div>
       </div>
 
       <p className="impact-summary">
-        Bridge matched the removed request key only inside AtlasPay payment objects.
-        Comments, strings, and unrelated identifiers remain outside the patch scope.
+        Only persisted scanner matches appear below. The AtlasPay recipe guard keeps
+        comments, strings, and unrelated identifiers outside patch eligibility.
       </p>
 
       <div className="impact-list">

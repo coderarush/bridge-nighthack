@@ -1,4 +1,6 @@
 import type { RunStatus } from "../types";
+import { hasCompleteEvidence } from "../evidence/verification";
+import type { EvidenceView } from "../types";
 
 // Allowed forward transitions for a migration run.
 export const TRANSITIONS: Record<RunStatus, RunStatus[]> = {
@@ -21,16 +23,6 @@ export function canTransition(from: RunStatus, to: RunStatus): boolean {
 }
 
 // validating -> ready_for_review requires verified evidence for the SAME sha.
-export function canReadyForReview(evidence: {
-  commitSha?: string;
-  pullRequestUrl?: string;
-  validationUrl?: string;
-  validationConclusion?: string;
-}): boolean {
-  return Boolean(
-    evidence.commitSha &&
-      evidence.pullRequestUrl &&
-      evidence.validationUrl &&
-      evidence.validationConclusion === "success",
-  );
+export function canReadyForReview(evidence: EvidenceView): boolean {
+  return hasCompleteEvidence(evidence);
 }

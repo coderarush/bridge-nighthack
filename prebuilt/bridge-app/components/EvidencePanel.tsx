@@ -1,13 +1,48 @@
 import type { ReactNode } from "react";
-import type { EvidenceView } from "@/lib/types";
+import { isEvidenceVerified } from "@/lib/evidence/verification";
+import type { EvidenceView, RunStatus } from "@/lib/types";
 
-export function EvidencePanel({ evidence }: { evidence: EvidenceView }) {
+export function EvidencePanel({
+  evidence,
+  runStatus,
+}: {
+  evidence: EvidenceView;
+  runStatus: RunStatus;
+}) {
   const hasPr = Boolean(evidence.pullRequestUrl && evidence.pullRequestNumber);
   const hasCommit = Boolean(evidence.commitSha);
-  const ciPassed = evidence.validationConclusion === "success";
+  const evidenceVerified = isEvidenceVerified(runStatus, evidence);
+  const ciCompletedSuccess =
+    evidence.validationStatus === "completed" &&
+    evidence.validationConclusion === "success";
   const ciFailed = Boolean(
     evidence.validationConclusion && evidence.validationConclusion !== "success",
   );
+  const headMismatched = evidence.currentHeadStatus === "mismatched";
+  const headUnavailable = evidence.currentHeadStatus === "unavailable";
+  const healthLabel = evidenceVerified
+    ? "Exact-SHA proof current"
+    : headMismatched
+      ? "PR head changed"
+      : headUnavailable
+        ? "Head check unavailable"
+        : "Awaiting exact-SHA proof";
+  const ciState = evidenceVerified
+    ? "Passed"
+    : headMismatched
+      ? "PR head changed"
+      : headUnavailable
+        ? "Head check unavailable"
+        : ciCompletedSuccess
+          ? "Success not verified"
+          : ciFailed
+            ? evidence.validationConclusion ?? "Failed"
+            : evidence.validationStatus ?? "Waiting";
+  const ciTone = evidenceVerified
+    ? "verified"
+    : headMismatched || ciFailed
+      ? "failed"
+      : "pending";
 
   return (
     <section className="panel evidence-panel" aria-labelledby="evidence-title">
@@ -16,9 +51,9 @@ export function EvidencePanel({ evidence }: { evidence: EvidenceView }) {
           <p className="section-eyebrow">External proof</p>
           <h2 id="evidence-title">PR, commit, and CI</h2>
         </div>
-        <span className={`evidence-health ${ciPassed ? "is-verified" : ""}`}>
+        <span className={`evidence-health ${evidenceVerified ? "is-verified" : ""}`}>
           <span aria-hidden="true" />
-          {ciPassed ? "Evidence verified" : "Awaiting external evidence"}
+          {healthLabel}
         </span>
       </div>
 
@@ -59,14 +94,8 @@ export function EvidencePanel({ evidence }: { evidence: EvidenceView }) {
         <EvidenceRow
           index="03"
           label="GitHub Actions"
-          state={
-            ciPassed
-              ? "Passed"
-              : ciFailed
-                ? evidence.validationConclusion ?? "Failed"
-                : evidence.validationStatus ?? "Waiting"
-          }
-          tone={ciPassed ? "verified" : ciFailed ? "failed" : "pending"}
+          state={ciState}
+          tone={ciTone}
           value={
             evidence.validationUrl ? (
               <a
@@ -91,7 +120,7 @@ export function EvidencePanel({ evidence }: { evidence: EvidenceView }) {
         <i aria-hidden="true" />
         <span className={hasCommit ? "chain-complete" : ""}>SHA</span>
         <i aria-hidden="true" />
-        <span className={ciPassed ? "chain-verified" : ""}>CI</span>
+        <span className={evidenceVerified ? "chain-verified" : ""}>CI</span>
       </div>
 
       {evidence.branchName ? (

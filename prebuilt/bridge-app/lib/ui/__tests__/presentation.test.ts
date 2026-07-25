@@ -6,6 +6,7 @@ import * as React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import ts from "typescript";
 import { EvidencePanel } from "../../../components/EvidencePanel";
+import { ImpactedFiles } from "../../../components/ImpactedFiles";
 import { Timeline } from "../../../components/Timeline";
 import type { RunEventView } from "../../types";
 
@@ -115,6 +116,7 @@ test("pending timeline copy never fabricates repository counts", () => {
 test("external evidence links open safely in a new tab", () => {
   const html = renderToStaticMarkup(
     React.createElement(EvidencePanel, {
+      runStatus: "ready_for_review",
       evidence: {
         pullRequestUrl: "https://github.com/example/repo/pull/1",
         pullRequestNumber: 1,
@@ -133,11 +135,64 @@ test("external evidence links open safely in a new tab", () => {
 
 test("pending pull-request evidence follows patch creation, not approval", () => {
   const html = renderToStaticMarkup(
-    React.createElement(EvidencePanel, { evidence: {} }),
+    React.createElement(EvidencePanel, {
+      evidence: {},
+      runStatus: "queued",
+    }),
   );
 
   assert.match(html, /Created after patch commit/);
   assert.doesNotMatch(html, /after plan approval/i);
+});
+
+test("stored CI success is not verified after a run fails", () => {
+  const html = renderToStaticMarkup(
+    React.createElement(EvidencePanel, {
+      runStatus: "validation_failed",
+      evidence: {
+        pullRequestUrl: "https://github.com/example/repo/pull/1",
+        pullRequestNumber: 1,
+        commitSha: "abcdef0123456789",
+        validationUrl: "https://github.com/example/repo/actions/runs/1",
+        validationStatus: "completed",
+        validationConclusion: "success",
+      },
+    }),
+  );
+
+  assert.match(html, /Success not verified/);
+  assert.match(html, /Awaiting exact-SHA proof/);
+  assert.doesNotMatch(html, /Exact-SHA proof recorded/);
+});
+
+test("PR-head drift is shown as failed evidence", () => {
+  const html = renderToStaticMarkup(
+    React.createElement(EvidencePanel, {
+      runStatus: "validation_failed",
+      evidence: {
+        pullRequestUrl: "https://github.com/example/repo/pull/1",
+        pullRequestNumber: 1,
+        commitSha: "abcdef0123456789",
+        validationUrl: "https://github.com/example/repo/actions/runs/1",
+        validationStatus: "completed",
+        validationConclusion: "success",
+        currentHeadStatus: "mismatched",
+      },
+    }),
+  );
+
+  assert.match(html, /PR head changed/);
+  assert.doesNotMatch(html, /Exact-SHA proof current/);
+});
+
+test("impact totals never fabricate an excluded-look-alike count", () => {
+  const html = renderToStaticMarkup(
+    React.createElement(ImpactedFiles, { impacts: [] }),
+  );
+
+  assert.match(html, /aria-label="0 persisted scanner matches"/);
+  assert.match(html, /No verified call sites yet/);
+  assert.doesNotMatch(html, /look-alikes excluded/);
 });
 
 test("room title is the compact page-level heading", async () => {
