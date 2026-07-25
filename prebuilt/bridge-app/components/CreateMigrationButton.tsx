@@ -2,13 +2,21 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useBridgeAuth } from "./AuthBootstrap";
+import { DEMO_RUN_ID } from "@/lib/demo";
 
 export function CreateMigrationButton() {
   const router = useRouter();
   const auth = useBridgeAuth();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const isOperator = auth.participant?.role === "operator";
+
   async function create() {
+    if (!isOperator) {
+      router.push(`/room/${DEMO_RUN_ID}`);
+      return;
+    }
+
     setBusy(true); setErr(null);
     try {
       const res = await auth.authorizedFetch("/api/runs/start", { method: "POST" });
@@ -28,14 +36,14 @@ export function CreateMigrationButton() {
       <button
         className="btn"
         onClick={create}
-        disabled={busy || auth.participant?.role !== "operator"}
+        disabled={busy || auth.status === "loading"}
         aria-busy={busy}
       >
         {busy
           ? "Creating…"
-          : auth.participant?.role === "operator"
+          : isOperator
             ? "Create migration →"
-            : "Operator access required"}
+            : "Open live demo →"}
       </button>
       {err ? <p className="muted" style={{ fontSize: 12, color: "var(--amber)" }}>{err}</p> : null}
     </div>

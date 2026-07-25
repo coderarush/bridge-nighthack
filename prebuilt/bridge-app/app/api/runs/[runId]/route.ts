@@ -5,6 +5,7 @@ import {
 } from "@/lib/adapters/github";
 import { authErrorResponse, requireRunParticipant } from "@/lib/auth/session";
 import { getRoom } from "@/lib/db/queries";
+import { isPublicDemoRun } from "@/lib/demo/public-access";
 import { projectCurrentEvidence } from "@/lib/evidence/verification";
 
 export const dynamic = "force-dynamic";
@@ -13,16 +14,19 @@ type RouteContext = { params: Promise<{ runId: string }> };
 
 export async function GET(request: NextRequest, context: RouteContext) {
   const { runId } = await context.params;
-  try {
-    await requireRunParticipant(request, runId);
-  } catch (error) {
-    return (
-      authErrorResponse(error) ??
-      Response.json(
-        { error: "Authorization failed.", code: "AUTH_FAILED", retryable: false },
-        { status: 401 },
-      )
-    );
+  const publicDemo = isPublicDemoRun(runId);
+  if (!publicDemo) {
+    try {
+      await requireRunParticipant(request, runId);
+    } catch (error) {
+      return (
+        authErrorResponse(error) ??
+        Response.json(
+          { error: "Authorization failed.", code: "AUTH_FAILED", retryable: false },
+          { status: 401 },
+        )
+      );
+    }
   }
 
   try {
@@ -57,7 +61,13 @@ export async function GET(request: NextRequest, context: RouteContext) {
           evidence: projected.evidence,
         },
       },
-      { headers: { "Cache-Control": "private, no-store" } },
+      {
+        headers: {
+          "Cache-Control": publicDemo
+            ? "public, s-maxage=15, stale-while-revalidate=60"
+            : "private, no-store",
+        },
+      },
     );
   } catch (error) {
     return Response.json(

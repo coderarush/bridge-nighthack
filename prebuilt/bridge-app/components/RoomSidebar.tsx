@@ -32,9 +32,11 @@ async function responseError(
 export function RoomSidebar({
   room,
   onRefresh,
+  readOnly = false,
 }: {
   room: RoomAggregate;
   onRefresh?: () => void | Promise<void>;
+  readOnly?: boolean;
 }) {
   const router = useRouter();
   const auth = useBridgeAuth();
@@ -50,9 +52,9 @@ export function RoomSidebar({
     useState<MutationState>({ status: "idle" });
 
   useEffect(() => {
-    if (auth.status !== "ready" || !auth.participant) {
+    if (readOnly || auth.status !== "ready" || !auth.participant) {
       setPresence([]);
-      setRealtimeStatus("connecting");
+      setRealtimeStatus(readOnly ? "disconnected" : "connecting");
       setRealtimeError(null);
       return;
     }
@@ -108,16 +110,16 @@ export function RoomSidebar({
       disposed = true;
       if (disconnect) void disconnect().catch(() => {});
     };
-  }, [auth.participant, auth.status, onRefresh, room.runId, router, supabase]);
+  }, [auth.participant, auth.status, onRefresh, readOnly, room.runId, router, supabase]);
 
   useEffect(() => {
-    if (realtimeStatus !== "disconnected") return;
+    if (readOnly || realtimeStatus !== "disconnected") return;
     const timer = window.setInterval(() => {
       if (onRefresh) void onRefresh();
       else router.refresh();
     }, RECOVERY_POLL_MS);
     return () => window.clearInterval(timer);
-  }, [onRefresh, realtimeStatus, router]);
+  }, [onRefresh, readOnly, realtimeStatus, router]);
 
   async function send() {
     const body = draft.trim();
@@ -188,9 +190,12 @@ export function RoomSidebar({
 
   const commentBusy = commentState.status === "loading";
   const approvalBusy = approvalState.status === "loading";
-  const canComment = auth.status === "ready" && Boolean(auth.participant);
+  const canComment =
+    !readOnly && auth.status === "ready" && Boolean(auth.participant);
   const connectionLabel =
-    auth.status === "loading"
+    readOnly
+      ? "read-only demo"
+      : auth.status === "loading"
       ? "loading participant…"
       : auth.status === "invite_required"
         ? "invite required"
@@ -261,7 +266,9 @@ export function RoomSidebar({
           ))
         ) : (
           <span className="muted" style={{ fontSize: 12 }}>
-            {auth.status === "ready"
+            {readOnly
+              ? "Public viewer"
+              : auth.status === "ready"
               ? "Waiting for room presence…"
               : "Loading participant…"}
           </span>
@@ -305,7 +312,11 @@ export function RoomSidebar({
               }
             }}
             placeholder={
-              canComment ? "Comment…" : "Participant access required"
+              canComment
+                ? "Comment…"
+                : readOnly
+                  ? "Read-only demo"
+                  : "Participant access required"
             }
             disabled={!canComment || commentBusy}
             maxLength={2000}

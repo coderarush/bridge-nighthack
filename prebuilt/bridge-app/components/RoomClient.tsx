@@ -16,17 +16,25 @@ type LoadState =
   | { status: "not_found" }
   | { status: "error"; message: string };
 
-export function RoomClient({ runId }: { runId: string }) {
+export function RoomClient({
+  runId,
+  publicDemo = false,
+}: {
+  runId: string;
+  publicDemo?: boolean;
+}) {
   const auth = useBridgeAuth();
   const [state, setState] = useState<LoadState>({ status: "loading" });
 
   const loadRoom = useCallback(async () => {
-    if (auth.status !== "ready") return;
+    if (!publicDemo && auth.status !== "ready") return;
     setState((current) =>
       current.status === "ready" ? current : { status: "loading" },
     );
     try {
-      const response = await auth.authorizedFetch(`/api/runs/${runId}`);
+      const response = publicDemo
+        ? await fetch(`/api/runs/${runId}`)
+        : await auth.authorizedFetch(`/api/runs/${runId}`);
       const payload = await response.json().catch(() => ({}));
       if (response.status === 404) {
         setState({ status: "not_found" });
@@ -43,13 +51,13 @@ export function RoomClient({ runId }: { runId: string }) {
           error instanceof Error ? error.message : "Unable to load migration room.",
       });
     }
-  }, [auth, runId]);
+  }, [auth, publicDemo, runId]);
 
   useEffect(() => {
-    if (auth.status === "ready") void loadRoom();
-  }, [auth.status, loadRoom]);
+    if (publicDemo || auth.status === "ready") void loadRoom();
+  }, [auth.status, loadRoom, publicDemo]);
 
-  if (auth.status === "loading" || state.status === "loading") {
+  if ((!publicDemo && auth.status === "loading") || state.status === "loading") {
     return (
       <main className="container">
         <p className="muted" role="status">
@@ -59,7 +67,7 @@ export function RoomClient({ runId }: { runId: string }) {
     );
   }
 
-  if (auth.status === "invite_required") {
+  if (!publicDemo && auth.status === "invite_required") {
     return (
       <main className="container">
         <h1>Participant access required</h1>
@@ -71,7 +79,7 @@ export function RoomClient({ runId }: { runId: string }) {
     );
   }
 
-  if (auth.status === "error") {
+  if (!publicDemo && auth.status === "error") {
     return (
       <main className="container">
         <p className="muted" role="alert">
@@ -134,7 +142,7 @@ export function RoomClient({ runId }: { runId: string }) {
           <EvidencePanel evidence={room.evidence} runStatus={room.status} />
           <Timeline events={room.events} />
         </div>
-        <RoomSidebar room={room} onRefresh={loadRoom} />
+        <RoomSidebar room={room} onRefresh={loadRoom} readOnly={publicDemo} />
       </div>
     </main>
   );
