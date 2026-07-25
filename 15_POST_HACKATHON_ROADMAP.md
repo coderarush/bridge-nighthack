@@ -2,7 +2,7 @@
 
 ## First 72 hours: turn the demo into a verified artifact
 
-1. Preserve source commit `3407bf9` as the provenance for the verified run evidence and application commit `d67ce94` as the later release boundary.
+1. Preserve source commit `3407bf9` as the provenance for the verified run evidence and application commit `21fa19c` as the later release boundary.
 2. Never reset the preserved run. Exercise onboarding changes only with separate workspaces and disposable runs.
 3. Record the unlisted 2-3 minute walkthrough from the deployed product. Keep the live evidence URLs in the description or submission packet, never credentials.
 4. Audit the public deployment: no seed/fake-success fallback, no browser-visible server secret, explicit unauthorized/error states, and a clean two-browser participant setup.

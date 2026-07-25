@@ -95,7 +95,7 @@ This framing proves remediation, not merely that some branch happened to have a 
 
 The regular-expression migration tests assert that required tables, tenant keys, idempotency constraints, RLS declarations, grants, and RPC boundaries remain present. Those are migration-shape tests.
 
-The final `npm test` snapshot discovered 208 tests: 207 passed and one Docker-only test was skipped because Docker Desktop's storage became unavailable. The exact final `0001` through `0010` migration chain separately executed in PGlite and passed tenant isolation, RLS visibility, service-only mutation boundaries, runtime guards, durable leases, workspace audit creation, and injected atomic-onboarding rollback.
+The final `npm test` snapshot discovered 219 tests: 218 passed and one Docker-only test was skipped because Docker Desktop's storage became unavailable. The exact final `0001` through `0010` migration chain separately executed in PGlite and passed tenant isolation, RLS visibility, service-only mutation boundaries, runtime guards, durable leases, workspace audit creation, and injected atomic-onboarding rollback.
 
 Production Supabase then accepted `0006` through `0010`; a live human identity created and read its workspace through RLS, produced one audit record, and received the state-bound GitHub installation URL, while unauthenticated routes returned `401`. This is meaningful live evidence, but it does **not** prove the external GitHub callback, the full production role matrix, lifecycle webhook reconciliation, worker execution, customer-volume query plans, or external secret-manager operation.
 

@@ -14,7 +14,7 @@
 - Bridge source: `https://github.com/coderarush/bridge-nighthack`
 
 This snapshot records the verified July 24, 2026 demo state. The later
-application release is `d67ce94` at `https://bridge-nighthack.vercel.app`.
+application release is `21fa19c` at `https://bridge-nighthack.vercel.app`.
 Do not attribute the preserved run to that later release.
 
 The NightHack demo uses a server-side, repository-scoped GitHub credential for

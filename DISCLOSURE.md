@@ -27,7 +27,7 @@ These assets were intended to make a narrow demo feasible. They are not represen
 
 ## During the build window (judged)
 
-The preserved live evidence boundary is the diff from `nighthack-start` (`24f10d7`) through `3407bf9`: 69 changed files, 9,910 additions, and 540 deletions. The current application boundary is `d67ce94`: 123 changed files, 24,992 additions, and 547 deletions. A later documentation-only packet commit does not change that application tree.
+The preserved live evidence boundary is the diff from `nighthack-start` (`24f10d7`) through `3407bf9`: 69 changed files, 9,910 additions, and 540 deletions. The current application boundary is `21fa19c`: 147 changed files, 26,191 additions, and 1,040 deletions. A later documentation-only packet commit does not change that application tree.
 
 - Removed seeded/fake-success room fallbacks and added explicit loading, not-found, failure, retry, and evidence states.
 - Built authenticated operator/provider/customer sessions using private invite capabilities, participant roles, and row-level security.
@@ -35,6 +35,8 @@ The preserved live evidence boundary is the diff from `nighthack-start` (`24f10d
 - Added live room presence, persisted comments and approvals, audit events, and provider-only approval enforcement.
 - Added reset/recovery controls, run locks, idempotency guards, active-run deduplication, and schema migrations supporting those controls.
 - Added exact-PR-head waiting so validation does not accept a check for a stale PR commit.
+- Rechecks the live PR head on every authenticated ready-room read and immediately before approval. A mismatch, incomplete chain, or unavailable GitHub read fails closed in the response and UI; ordinary room reads do not mutate the preserved run.
+- Removed a hardcoded excluded-look-alike total from the product UI. The room now counts only persisted scanner matches and describes the AST guard without inventing scan evidence.
 - Scoped provider/customer access to explicit run memberships in both RLS and the Next.js API while preserving an intentional operator bypass.
 - Made GitHub retries reuse an unchanged branch head instead of creating another empty commit.
 - Added fragment-based capability handoff so new invite values are not sent in the initial HTTP request; legacy query links remain compatible.
@@ -44,13 +46,13 @@ The preserved live evidence boundary is the diff from `nighthack-start` (`24f10d
 - Added and deployed a workspace creation API/UI and secure GitHub App setup/callback routes backed by forward migrations `0009` and `0010`. Production proved human sign-in, workspace creation/read through RLS, atomic audit creation, anonymous rejection, and generation of the state-bound GitHub installation URL. GitHub's external consent and OAuth callback were not completed end to end.
 - Added tests for authentication, database queries, GitHub check/head selection, dynamic source discovery, run guards, reset/idempotency, realtime behavior, workspace creation, GitHub App onboarding, durable jobs, and production migration behavior; substantially rebuilt the product UI for the live flow.
 
-The commits through the preserved evidence source are `1b7a145`, `2a5c69b`, `f4d0a87`, `3cfdd5b`, `aeece7d`, `dd9ee24`, `e406b10`, `c03b439`, `5508480`, and `3407bf9`. The subsequent application commits are `8f1acb4`, `c47cf1f`, `37202ea`, `9c58324`, `dce3d1d`, `4225ed4`, `5bdb64c`, and `d67ce94`.
+The commits through the preserved evidence source are `1b7a145`, `2a5c69b`, `f4d0a87`, `3cfdd5b`, `aeece7d`, `dd9ee24`, `e406b10`, `c03b439`, `5508480`, and `3407bf9`. The subsequent application commits are `8f1acb4`, `c47cf1f`, `37202ea`, `9c58324`, `dce3d1d`, `4225ed4`, `5bdb64c`, `d67ce94`, and `21fa19c`. Packet-only documentation commits `368efbc` and `505ed25` sit between the last two application commits and do not alter the deployed app tree.
 
 ### Test-scope clarification
 
 The regular-expression migration tests assert that expected tables, functions, policies, grants, and revocations remain present. That is **migration-shape coverage**, not database execution proof.
 
-The final application test snapshot discovered 208 Node tests: 207 passed and one Docker-only test was skipped because Docker Desktop's storage became unavailable. The complete `0001` through `0010` chain then executed in PGlite with tenant/RLS assertions and an injected audit failure proving atomic GitHub-onboarding rollback. Production Supabase accepted `0006` through `0010`, and a live human identity proved workspace creation/read, audit persistence, anonymous denial, and the GitHub pre-install handshake. This does not prove the external GitHub consent/callback, lifecycle reconciliation, or a deployed worker.
+The final application test snapshot discovered 219 Node tests: 218 passed and one Docker-only test was skipped because Docker Desktop's storage became unavailable. The complete `0001` through `0010` chain then executed in PGlite with tenant/RLS assertions and an injected audit failure proving atomic GitHub-onboarding rollback. Production Supabase accepted `0006` through `0010`, and a live human identity proved workspace creation/read, audit persistence, anonymous denial, and the GitHub pre-install handshake. This does not prove the external GitHub consent/callback, lifecycle reconciliation, or a deployed worker.
 
 The fixture PR retains one empty same-tree child commit created by a repeat run before the no-op retry fix. The actual patch is in its parent. The final deployed rerun exercised the fix and created no additional commit.
 
@@ -70,5 +72,5 @@ Judges can inspect the public before-versus-during boundary:
 
 ```bash
 git show nighthack-start
-git diff nighthack-start..d67ce94
+git diff nighthack-start..21fa19c
 ```

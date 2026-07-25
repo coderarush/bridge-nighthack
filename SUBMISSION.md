@@ -15,16 +15,16 @@
 
 ## Links and availability
 
-The completed end-to-end evidence chain, live authorization, and two-role room were generated and verified on July 24, 2026 with deployed source commit `3407bf9`. The current application release is `d67ce94`; it was deployed and passed read-only regression plus human workspace creation, RLS/audit, and GitHub pre-install probes without regenerating or resetting the preserved run.
+The completed end-to-end evidence chain, live authorization, and two-role room were generated and verified on July 24, 2026 with deployed source commit `3407bf9`. The current application release is `21fa19c`; it was deployed and passed the full test/build gate, public and protected-route probes, exact-current-PR-head verification, and responsive visual regression without regenerating or resetting the preserved run. Human workspace creation, RLS/audit, and GitHub pre-install probes passed on the preceding application release; those paths are unchanged in `21fa19c`.
 
 | Surface | URL | Status |
 | --- | --- | --- |
 | Marketing site | https://usebridge.vercel.app | REACHABLE - HTTP 200 |
-| Product | https://bridge-nighthack.vercel.app | VERIFIED on `d67ce94` - public HTTP 200; current team routes passed and preserved evidence remains readable |
+| Product | https://bridge-nighthack.vercel.app | VERIFIED on `21fa19c` - public HTTP 200; protected-route denial, current team surfaces, and preserved exact-head evidence passed |
 | Project repository | https://github.com/coderarush/bridge-nighthack | VERIFIED - public source and final packet |
 | Preserved evidence source | https://github.com/coderarush/bridge-nighthack/commit/3407bf9ab44db851da319b9220fe940ec2b106e7 | VERIFIED - source that produced the completed run |
-| Current application release | https://github.com/coderarush/bridge-nighthack/commit/d67ce94629a8ad1b64bbf3468475e7f0cf0d476f | VERIFIED - pushed application and migration boundary |
-| Current release deployment | https://bridge-nighthack.vercel.app | VERIFIED - health, public pages, protected-route denial, human workspace creation/pre-install, and responsive visual checks passed |
+| Current application release | https://github.com/coderarush/bridge-nighthack/commit/21fa19c2fafb1aaaf06edcda85ab63329e9db7f6 | VERIFIED - pushed application and evidence-integrity boundary |
+| Current release deployment | https://bridge-nighthack.vercel.app | VERIFIED - health, public pages, protected-route denial, live stored-SHA/PR-head comparison, and responsive visual checks passed; the unchanged workspace/pre-install paths passed on the preceding release |
 | AtlasStore fixture | https://github.com/coderarush/atlas-store-demo | VERIFIED - public fixture repository |
 | Final migration room | https://bridge-nighthack.vercel.app/room/f1386415-3de2-41ad-b499-36261d2eec91 | VERIFIED - `ready_for_review`; requires a privately supplied participant capability |
 | Final draft PR | https://github.com/coderarush/atlas-store-demo/pull/1 | VERIFIED - open draft; exactly 3 files and `+3/-3` |
@@ -67,7 +67,7 @@ Before the no-op retry fix, a repeated run created `52ee5c54` as an empty child 
 
 ## Disclosure and scope
 
-The baseline is the annotated `nighthack-start` tag (`24f10d7`), created at **7:40:03 PM PDT** on July 24, 2026; its annotation records the starting state at **7:39 PM PDT**. The preserved evidence source is `3407bf9`; the current application boundary is `d67ce94`. `DISCLOSURE.md` gives the exact, concise before-versus-during boundary.
+The baseline is the annotated `nighthack-start` tag (`24f10d7`), created at **7:40:03 PM PDT** on July 24, 2026; its annotation records the starting state at **7:39 PM PDT**. The preserved evidence source is `3407bf9`; the current application boundary is `21fa19c`. `DISCLOSURE.md` gives the exact, concise before-versus-during boundary.
 
 The controlled fixture is AtlasPay's request-field rename. Bridge does not claim arbitrary-provider support, arbitrary-language support, autonomous merging, or completed production verification where the required external evidence is absent.
 
@@ -79,4 +79,4 @@ The controlled fixture is AtlasPay's request-field rename. Bridge does not claim
 
 ## Submission gate
 
-The preserved live technical gate passed on `3407bf9`, and the current `d67ce94` release passed its non-mutating regression and onboarding probes. The remaining operator submission steps are to add the verified unlisted YouTube walkthrough URL and paste both role-labeled capability URLs into the platform's private testing-instructions field.
+The preserved live technical gate passed on `3407bf9`, and the current `21fa19c` release passed its non-mutating exact-head, route, build, and visual regression probes. The remaining operator submission steps are to add the verified unlisted YouTube walkthrough URL and paste both role-labeled capability URLs into the platform's private testing-instructions field.

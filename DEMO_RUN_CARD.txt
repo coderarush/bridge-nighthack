@@ -1,13 +1,13 @@
 BRIDGE NIGHTHACK DEMO CARD
 
 PITCH
-When an API provider ships a breaking change, Bridge traces that contract change to
-the exact customer call sites that will fail, generates a bounded deterministic patch,
-opens a real draft pull request, and verifies the exact commit in GitHub Actions.
-Provider and customer then review the evidence, comment, and approve in one live
-migration room. Changelogs tell customers what changed. Coding agents can modify a
-repository when prompted. Bridge connects the two and carries the migration from
-contract change to verified handoff.
+When a third-party API ships a breaking contract change, teams have to find the
+affected integration code, patch it, prove it in CI, and coordinate review. Bridge
+owns that migration event. For a bounded TypeScript recipe, it maps the contract diff
+to guarded customer call sites, applies deterministic AST edits, opens a draft PR,
+and refuses to mark it ready until GitHub Actions passes for the exact PR-head SHA.
+Bridge never auto-merges; humans review and approve in a shared room. Dependabot
+bumps versions. Bridge carries a breaking API change to a verified migration PR.
 
 SCOPE
 - AtlasPay is fictional. This proof covers one TypeScript repository, one guarded
@@ -28,7 +28,7 @@ SETUP
 - Red base: https://github.com/coderarush/atlas-store-demo/actions/runs/30142332724/job/89637894855
 - Green head: https://github.com/coderarush/atlas-store-demo/actions/runs/30142535151/job/89638422640
 - Preserved run source: 3407bf9. It scanned 4 explicit recipe paths.
-- Current application boundary: d67ce94. It was deployed without resetting this run.
+- Current application boundary: 21fa19c. It was deployed without resetting this run.
 - Later recursive discovery, durable jobs, workspace onboarding, and GitHub App code
   did not produce this run.
 
