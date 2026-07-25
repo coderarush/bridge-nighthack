@@ -305,6 +305,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
         branchName,
         ATLASPAY_RECIPE.prTitle,
         body,
+        commitSha,
       );
       if (pr.commitSha !== commitSha) {
         throw new Error(

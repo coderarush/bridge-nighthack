@@ -66,6 +66,7 @@ export interface RepositoryClient {
     branchName: string,
     title: string,
     body: string,
+    expectedCommitSha: string,
   ): Promise<PullRequestResult>;
 }
 

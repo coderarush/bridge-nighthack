@@ -17,6 +17,7 @@ import type {
 } from "./interfaces";
 import { requireDemoRepositoryConfig } from "../orchestrator/run-guards";
 import { evaluateRequiredCheckRuns } from "./github-checks";
+import { waitForExpectedPullRequestHead } from "./github-pr-head";
 
 function octokit(): Octokit {
   const token = process.env.GITHUB_TOKEN;
@@ -134,7 +135,13 @@ export const githubRepositoryClient: RepositoryClient = {
     return { commitSha: commit.data.sha };
   },
 
-  async openDraftPullRequest(ref, branchName, title, body) {
+  async openDraftPullRequest(
+    ref,
+    branchName,
+    title,
+    body,
+    expectedCommitSha,
+  ) {
     const gh = octokit();
     // idempotent: reuse an open PR for this branch if present
     const existing = await gh.pulls.list({
@@ -156,7 +163,17 @@ export const githubRepositoryClient: RepositoryClient = {
       });
       pr = created.data as typeof pr;
     }
-    const headSha = pr.head?.sha ?? "";
+    const headSha = await waitForExpectedPullRequestHead({
+      expectedSha: expectedCommitSha,
+      readHead: async () => {
+        const current = await gh.pulls.get({
+          owner: ref.owner,
+          repo: ref.repo,
+          pull_number: pr.number,
+        });
+        return current.data.head.sha;
+      },
+    });
     const result: PullRequestResult = {
       branchName,
       commitSha: headSha,
