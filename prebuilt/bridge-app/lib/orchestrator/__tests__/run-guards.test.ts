@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  advanceStageForStatus,
   classifyAdvance,
   requireDemoRepositoryConfig,
   validateMigrationShape,
@@ -44,11 +45,37 @@ test("classifies repeat advances without replaying external mutations", () => {
   assert.equal(classifyAdvance("cancelled"), "complete");
 });
 
+test("derives execution stage from the locked row and never regresses validation", () => {
+  assert.equal(advanceStageForStatus("analyzing_change"), "scan");
+  assert.equal(advanceStageForStatus("scanning_repo"), "scan");
+  assert.equal(advanceStageForStatus("planning"), "patch");
+  assert.equal(advanceStageForStatus("patching"), "patch");
+  assert.equal(advanceStageForStatus("validating"), null);
+  assert.equal(advanceStageForStatus("ready_for_review"), null);
+});
+
 test("accepts the exact AtlasPay fixture scan and patch shape", () => {
   assert.doesNotThrow(() => validateMigrationShape({
     expectedFetchPaths: ["a.ts", "b.ts", "c.ts", "logging.ts"],
     expectedImpactPaths: ["a.ts", "b.ts", "c.ts"],
     fetchedPaths: ["logging.ts", "c.ts", "a.ts", "b.ts"],
+    impactPaths: ["c.ts", "a.ts", "b.ts"],
+    patchedPaths: ["b.ts", "c.ts", "a.ts"],
+  }));
+});
+
+test("accepts additional dynamically discovered sources when required files exist", () => {
+  assert.doesNotThrow(() => validateMigrationShape({
+    expectedFetchPaths: ["a.ts", "b.ts", "c.ts", "logging.ts"],
+    expectedImpactPaths: ["a.ts", "b.ts", "c.ts"],
+    fetchedPaths: [
+      "src/client.ts",
+      "tests/contract.test.ts",
+      "logging.ts",
+      "c.ts",
+      "a.ts",
+      "b.ts",
+    ],
     impactPaths: ["c.ts", "a.ts", "b.ts"],
     patchedPaths: ["b.ts", "c.ts", "a.ts"],
   }));

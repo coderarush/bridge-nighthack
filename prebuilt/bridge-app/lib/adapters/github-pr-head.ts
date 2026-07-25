@@ -5,6 +5,18 @@ type WaitForPullRequestHeadOptions = {
   wait?: () => Promise<void>;
 };
 
+export class PullRequestHeadMismatchError extends Error {
+  constructor(
+    readonly observedSha: string,
+    readonly expectedSha: string,
+  ) {
+    super(
+      `Draft PR head ${observedSha || "missing"} does not match committed SHA ${expectedSha}.`,
+    );
+    this.name = "PullRequestHeadMismatchError";
+  }
+}
+
 const defaultWait = () =>
   new Promise<void>((resolve) => {
     setTimeout(resolve, 650);
@@ -23,7 +35,19 @@ export async function waitForExpectedPullRequestHead({
     if (attempt < attempts - 1) await wait();
   }
 
-  throw new Error(
-    `Draft PR head ${observedSha || "missing"} does not match committed SHA ${expectedSha}.`,
-  );
+  throw new PullRequestHeadMismatchError(observedSha, expectedSha);
+}
+
+export async function assertExpectedPullRequestHead({
+  expectedSha,
+  readHead,
+}: Pick<
+  WaitForPullRequestHeadOptions,
+  "expectedSha" | "readHead"
+>): Promise<string> {
+  const observedSha = await readHead();
+  if (observedSha !== expectedSha) {
+    throw new PullRequestHeadMismatchError(observedSha, expectedSha);
+  }
+  return observedSha;
 }

@@ -19,6 +19,11 @@ import { requireDemoRepositoryConfig } from "../orchestrator/run-guards";
 import { evaluateRequiredCheckRuns } from "./github-checks";
 import { waitForExpectedPullRequestHead } from "./github-pr-head";
 import { planGitCommit } from "./github-commit";
+import {
+  assertDiscoveredSourcesAreText,
+  discoverGitHubSources,
+  githubTreeSnapshot,
+} from "./github-source-discovery";
 
 function octokit(): Octokit {
   const token = process.env.GITHUB_TOKEN;
@@ -55,6 +60,16 @@ export const githubRepositoryClient: RepositoryClient = {
       }
     }
     return out;
+  },
+
+  async getPullRequestHead(ref, pullRequestNumber) {
+    const gh = octokit();
+    const current = await gh.pulls.get({
+      owner: ref.owner,
+      repo: ref.repo,
+      pull_number: pullRequestNumber,
+    });
+    return current.data.head.sha;
   },
 
   async createBranch(ref, branchName) {
@@ -192,6 +207,37 @@ export const githubRepositoryClient: RepositoryClient = {
       pullRequestUrl: pr.html_url,
     };
     return result;
+  },
+};
+
+export const githubSourceDiscoveryClient = {
+  async getFiles(ref: RepositoryRef): Promise<ScanTarget[]> {
+    const gh = octokit();
+    const tree = await gh.git.getTree({
+      owner: ref.owner,
+      repo: ref.repo,
+      tree_sha: ref.baseBranch,
+      recursive: "true",
+    });
+    const sources = discoverGitHubSources(githubTreeSnapshot(tree.data));
+    const files = await Promise.all(
+      sources.map(async (source) => {
+        const blob = await gh.git.getBlob({
+          owner: ref.owner,
+          repo: ref.repo,
+          file_sha: source.oid,
+        });
+        return {
+          path: source.path,
+          contents: Buffer.from(
+            blob.data.content,
+            blob.data.encoding as BufferEncoding,
+          ).toString("utf8"),
+        };
+      }),
+    );
+    assertDiscoveredSourcesAreText(files);
+    return files;
   },
 };
 

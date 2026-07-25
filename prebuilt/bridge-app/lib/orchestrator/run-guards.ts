@@ -14,6 +14,8 @@ export type AdvanceDisposition =
   | "already_running"
   | "complete";
 
+export type AdvanceExecutionStage = "scan" | "patch";
+
 export function requireDemoRepositoryConfig(
   env: DemoRepositoryEnv = process.env,
 ): RepositoryRef {
@@ -54,6 +56,28 @@ export function classifyAdvance(status: RunStatus): AdvanceDisposition {
   }
 }
 
+export function advanceStageForStatus(
+  status: RunStatus,
+): AdvanceExecutionStage | null {
+  switch (status) {
+    case "queued":
+    case "analyzing_change":
+    case "analysis_failed":
+    case "scan_failed":
+    case "scanning_repo":
+      return "scan";
+    case "planning":
+    case "patch_failed":
+    case "patching":
+      return "patch";
+    case "validating":
+    case "validation_failed":
+    case "ready_for_review":
+    case "cancelled":
+      return null;
+  }
+}
+
 type MigrationShape = {
   expectedFetchPaths: string[];
   expectedImpactPaths: string[];
@@ -75,9 +99,11 @@ function samePaths(left: string[], right: string[]): boolean {
 export function validateMigrationShape(shape: MigrationShape): void {
   const fetched = normalized(shape.fetchedPaths);
   const expectedFetch = normalized(shape.expectedFetchPaths);
-  if (!samePaths(fetched, expectedFetch)) {
+  const fetchedSet = new Set(fetched);
+  const missingRequired = expectedFetch.filter((path) => !fetchedSet.has(path));
+  if (missingRequired.length > 0) {
     throw new Error(
-      `Repository scan fetched ${fetched.length} of ${expectedFetch.length} required fixture files.`,
+      `Repository scan fetched ${expectedFetch.length - missingRequired.length} of ${expectedFetch.length} required fixture files.`,
     );
   }
 

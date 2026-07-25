@@ -1,9 +1,17 @@
 import { NextRequest } from "next/server";
 import { createServiceClient } from "@/lib/db/supabase";
-import { githubValidationClient, demoRepoRef } from "@/lib/adapters/github";
+import {
+  demoRepoRef,
+  githubRepositoryClient,
+  githubValidationClient,
+} from "@/lib/adapters/github";
 import { canReadyForReview } from "@/lib/state-machine/transitions";
 import { addEvent, updateRun } from "@/lib/db/queries";
 import { authErrorResponse, requireOperator } from "@/lib/auth/session";
+import {
+  assertExpectedPullRequestHead,
+  PullRequestHeadMismatchError,
+} from "@/lib/adapters/github-pr-head";
 
 export const dynamic = "force-dynamic";
 
@@ -96,6 +104,64 @@ export async function POST(req: NextRequest, context: RouteContext) {
   });
 
   if (v.status === "completed" && v.conclusion === "success") {
+    if (!run.pull_request_number) {
+      return Response.json(
+        {
+          error: "Run has no stored pull request number.",
+          code: "PULL_REQUEST_MISSING",
+          retryable: false,
+        },
+        { status: 409 },
+      );
+    }
+
+    try {
+      await assertExpectedPullRequestHead({
+        expectedSha: run.commit_sha,
+        readHead: () =>
+          githubRepositoryClient.getPullRequestHead(
+            ref,
+            run.pull_request_number,
+          ),
+      });
+    } catch (error) {
+      if (!(error instanceof PullRequestHeadMismatchError)) {
+        return Response.json(
+          {
+            error:
+              error instanceof Error
+                ? error.message
+                : "Unable to read the current pull request head.",
+            code: "GITHUB_PR_READ_FAILED",
+            retryable: true,
+          },
+          { status: 502 },
+        );
+      }
+
+      await updateRun(runId, {
+        status: "validation_failed",
+        current_stage: "validating",
+        error_code: "PR_HEAD_MISMATCH",
+        error_message: error.message,
+      });
+      await addEvent(runId, {
+        actorType: "system",
+        eventType: "validation.failed",
+        stage: "validating",
+        status: "error",
+        message: error.message,
+      });
+      return Response.json(
+        {
+          error: error.message,
+          code: "PR_HEAD_MISMATCH",
+          retryable: false,
+        },
+        { status: 409 },
+      );
+    }
+
     const evidence = { commitSha: run.commit_sha, pullRequestUrl: run.pull_request_url, validationUrl: v.url, validationConclusion: v.conclusion };
     if (canReadyForReview(evidence)) {
       await updateRun(runId, { status: "ready_for_review", current_stage: "ready_for_review" });

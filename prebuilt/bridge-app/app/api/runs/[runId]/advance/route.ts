@@ -1,11 +1,16 @@
 import { randomUUID } from "node:crypto";
 import { NextRequest } from "next/server";
 import { createServiceClient } from "@/lib/db/supabase";
-import { githubRepositoryClient, demoRepoRef } from "@/lib/adapters/github";
+import {
+  demoRepoRef,
+  githubRepositoryClient,
+  githubSourceDiscoveryClient,
+} from "@/lib/adapters/github";
 import { atlasPayScanner, atlasPayPatchEngine } from "@/lib/adapters/deterministic";
 import { ATLASPAY_RECIPE, buildPrBody } from "@/lib/recipe/atlaspay";
 import { addEvent, updateRun } from "@/lib/db/queries";
 import {
+  advanceStageForStatus,
   classifyAdvance,
   validateMigrationShape,
 } from "@/lib/orchestrator/run-guards";
@@ -185,19 +190,38 @@ export async function POST(req: NextRequest, context: RouteContext) {
   }
 
   const status = lockedRun.status as RunStatus;
+  const lockedDisposition = classifyAdvance(status);
+  const stage = advanceStageForStatus(status);
+  if (!stage) {
+    try {
+      await releaseRunLock(runId, lockOwner);
+    } catch (error) {
+      return apiError(
+        503,
+        "LOCK_RELEASE_FAILED",
+        error instanceof Error ? error.message : "Unable to release run lock.",
+        true,
+      );
+    }
+
+    if (lockedDisposition === "complete") {
+      return Response.json({
+        runId,
+        status,
+        commitSha: lockedRun.commit_sha,
+        pullRequestUrl: lockedRun.pull_request_url,
+      });
+    }
+    return Response.json(
+      { runId, status, retryable: true },
+      { status: 202 },
+    );
+  }
+
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? new URL(req.url).origin;
-  const stage =
-    status === "planning" ||
-    status === "patch_failed" ||
-    status === "patching"
-      ? "patch"
-      : "scan";
 
   try {
-    const files = await githubRepositoryClient.getFiles(
-      ref,
-      ATLASPAY_RECIPE.targetFiles,
-    );
+    const files = await githubSourceDiscoveryClient.getFiles(ref);
     const impacts = atlasPayScanner.scan(files);
 
     if (stage === "scan") {
@@ -212,7 +236,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
         eventType: "repo.scan.started",
         stage: "scanning_repo",
         status: "ok",
-        message: "Fetching controlled target files from GitHub.",
+        message: "Discovering bounded TypeScript sources from the GitHub tree.",
       });
       validateMigrationShape({
         expectedFetchPaths: ATLASPAY_RECIPE.targetFiles,
@@ -228,7 +252,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
         eventType: "repo.scan.completed",
         stage: "scanning_repo",
         status: "ok",
-        message: `Found ${impacts.length} impacted files; ignored look-alike strings.`,
+        message: `Scanned ${files.length} TypeScript files and found ${impacts.length} impacts; ignored look-alikes.`,
       });
       await addEvent(runId, {
         actorType: "system",

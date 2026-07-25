@@ -54,6 +54,10 @@ export interface PullRequestResult {
 // LIVE-BUILD: implement with @octokit/rest + a fine-grained PAT (server-only).
 export interface RepositoryClient {
   getFiles(ref: RepositoryRef, paths: string[]): Promise<ScanTarget[]>;
+  getPullRequestHead(
+    ref: RepositoryRef,
+    pullRequestNumber: number,
+  ): Promise<string>;
   createBranch(ref: RepositoryRef, branchName: string): Promise<{ sha: string }>;
   commitFiles(
     ref: RepositoryRef,
